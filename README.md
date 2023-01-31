@@ -1,5 +1,5 @@
+### Assignment 1 - Himank Pathak
 
-### Assignment 1
-
-- Move the plater using WASD keys.
-- Place a block using Spacebar key.
+Simple AfterBurner module which allows camera movement
+and placing blocks on the field.
+Player control instructions are in [Instructions.md](Instructions.md)
