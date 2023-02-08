@@ -83,6 +83,7 @@ void GLViewBlockyWorld::onCreate()
 GLViewBlockyWorld::~GLViewBlockyWorld()
 {
     //Implicitly calls GLView::~GLView()
+    //GLView::~GLView();
 }
 
 
@@ -91,6 +92,8 @@ void GLViewBlockyWorld::updateWorld()
     GLView::updateWorld(); //Just call the parent's update world first.
     //If you want to add additional functionality, do it after
     //this call.
+
+    updateProjection();
 }
 
 
@@ -115,6 +118,7 @@ void GLViewBlockyWorld::onMouseUp(const SDL_MouseButtonEvent& e)
 void GLViewBlockyWorld::onMouseMove(const SDL_MouseMotionEvent& e)
 {
     GLView::onMouseMove(e);
+    //updateProjection();
 }
 
 
@@ -124,9 +128,62 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
     if (key.keysym.sym == SDLK_0)
         this->setNumPhysicsStepsPerRender(1);
 
-    if (key.keysym.sym == SDLK_1)
-    {
+    //updateProjection();
 
+    if (key.keysym.sym == SDLK_p)
+    {
+        //prj_block->isVisible = !prj_block->isVisible;
+    }
+
+    if (key.keysym.sym == SDLK_SPACE)
+    {
+        placeBox(false);
+    }
+
+    if (key.keysym.sym == SDLK_w)
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        this->getCamera()->moveRelative(lookDirection);
+
+    }
+
+    if (key.keysym.sym == SDLK_s)
+    {
+        // auto vel = this->getCamera()->getCameraVelocity();
+        auto lookDirection = this->getCamera()->getLookDirection();
+        this->getCamera()->moveRelative(lookDirection * -1);
+    }
+
+    if (key.keysym.sym == SDLK_d)
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getNormalDirection();
+
+        this->getCamera()->moveRelative(lookDirection.crossProduct(normalDirection));
+    }
+
+    if (key.keysym.sym == SDLK_a)
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getNormalDirection();
+
+        this->getCamera()->moveRelative(lookDirection.crossProduct(normalDirection) * -1);
+    }
+
+    if (key.keysym.sym == SDLK_LSHIFT)
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getLookDirection();
+
+        this->getCamera()->moveRelative(Vector(0, 0, 1));
+    }
+
+    if (key.keysym.sym == SDLK_LCTRL)
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getLookDirection();
+
+        this->getCamera()->moveRelative(Vector(0, 0, -1));
     }
 }
 
@@ -136,6 +193,10 @@ void GLViewBlockyWorld::onKeyUp(const SDL_KeyboardEvent& key)
     GLView::onKeyUp(key);
 }
 
+void GLViewBlockyWorld::updateActiveKeys(SDL_KeyCode keycode, bool state)
+{
+    active_keys[keycode] = state;
+}
 
 void Aftr::GLViewBlockyWorld::loadMap()
 {
@@ -149,57 +210,60 @@ void Aftr::GLViewBlockyWorld::loadMap()
     Axes::isVisible = true;
     this->glRenderer->isUsingShadowMapping(false); //set to TRUE to enable shadow mapping, must be using GL 3.2+
 
-    this->cam->setPosition(15, 15, 10);
+    this->cam->setPosition(0, 0, 10);
 
-    std::string shinyRedPlasticCube(ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl");
+    cube_proj_loc = ManagerEnvironmentConfiguration::getLMM() + "/models/cube4x4x4redShinyPlastic_transparent.wrl";
+    //cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/Aircraft/f35/f35.3ds";
+    cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl";
+
     std::string wheeledCar(ManagerEnvironmentConfiguration::getSMM() + "/models/rcx_treads.wrl");
     std::string grass(ManagerEnvironmentConfiguration::getSMM() + "/models/grassFloor400x400_pp.wrl");
     std::string human(ManagerEnvironmentConfiguration::getSMM() + "/models/human_chest.wrl");
 
-    //SkyBox Textures readily available
-    std::vector< std::string > skyBoxImageNames; //vector to store texture paths
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_water+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_dust+6.jpg" );
-    skyBoxImageNames.push_back(ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_mountains+6.jpg");
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_winter+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/early_morning+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_afternoon+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_cloudy+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_cloudy3+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_day+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_day2+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_deepsun+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_evening+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_morning+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_morning2+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_noon+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_warp+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_Hubble_Nebula+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_gray_matter+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_easter+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_hot_nebula+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_ice_field+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_lemon_lime+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_milk_chocolate+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_solar_bloom+6.jpg" );
-    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_thick_rb+6.jpg" );
+    // SkyBox Textures readily available
+    std::vector<std::string> skyBoxImageNames; // vector to store texture paths
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_water+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_dust+6.jpg" );
+    //skyBoxImageNames.push_back(ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_mountains+6.jpg");
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_winter+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/early_morning+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_afternoon+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_cloudy+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_cloudy3+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_day+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_day2+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_deepsun+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_evening+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_morning+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_morning2+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_noon+6.jpg" );
+    skyBoxImageNames.push_back(ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_warp+6.jpg");
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_Hubble_Nebula+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_gray_matter+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_easter+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_hot_nebula+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_ice_field+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_lemon_lime+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_milk_chocolate+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_solar_bloom+6.jpg" );
+    // skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_thick_rb+6.jpg" );
 
     {
-        //Create a light
-        float ga = 0.1f; //Global Ambient Light level for this module
+        // Create a light
+        float ga = 0.1f; // Global Ambient Light level for this module
         ManagerLight::setGlobalAmbientLight(aftrColor4f(ga, ga, ga, 1.0f));
         WOLight* light = WOLight::New();
         light->isDirectionalLight(true);
         light->setPosition(Vector(0, 0, 100));
-        //Set the light's display matrix such that it casts light in a direction parallel to the -z axis (ie, downwards as though it was "high noon")
-        //for shadow mapping to work, this->glRenderer->isUsingShadowMapping( true ), must be invoked.
+        // Set the light's display matrix such that it casts light in a direction parallel to the -z axis (ie, downwards as though it was "high noon")
+        // for shadow mapping to work, this->glRenderer->isUsingShadowMapping( true ), must be invoked.
         light->getModel()->setDisplayMatrix(Mat4::rotateIdentityMat({ 0, 1, 0 }, 90.0f * Aftr::DEGtoRAD));
         light->setLabel("Light");
         worldLst->push_back(light);
     }
 
     {
-        //Create the SkyBox
+        // Create the SkyBox
         WO* wo = WOSkyBox::New(skyBoxImageNames.at(0), this->getCameraPtrPtr());
         wo->setPosition(Vector(0, 0, 0));
         wo->setLabel("Sky Box");
@@ -215,15 +279,17 @@ void Aftr::GLViewBlockyWorld::loadMap()
         wo->upon_async_model_loaded([wo]()
             {
                 ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
-        grassSkin.getMultiTextureSet().at(0)->setTextureRepeats(5.0f);
-        grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
-        grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
-        grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
-        grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+        grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
+        grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f));  // Color of object when it is not in any light
+        grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));  // Diffuse color components (ie, matte shading color of this object)
+        grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); // Specular color component (ie, how "shiney" it is)
+        grassSkin.setSpecularCoefficient(10);                       // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
             });
         wo->setLabel("Grass");
         worldLst->push_back(wo);
     }
+
+    placeBox(true);
 
     //{
     //   //Create the infinite grass plane that uses the Open Dynamics Engine (ODE)
@@ -232,6 +298,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
     //   wo->setPosition( Vector(0,0,0) );
     //   wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
     //   wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0).getMultiTextureSet().at(0)->setTextureRepeats( 5.0f );
+
     //   wo->setLabel( "Grass" );
     //   worldLst->push_back( wo );
     //}
@@ -295,6 +362,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
     //}
 
     //{
+
     //   //Create and insert the WOWheeledVehicle
     //   std::vector< std::string > wheels;
     //   std::string wheelStr( "../../../shared/mm/models/WOCar1970sBeaterTire.wrl" );
@@ -312,23 +380,87 @@ void Aftr::GLViewBlockyWorld::loadMap()
     //   netLst->push_back( wo );
     //}
 
-    //Make a Dear Im Gui instance via the WOImGui in the engine... This calls
-    //the default Dear ImGui demo that shows all the features... To create your own,
-    //inherit from WOImGui and override WOImGui::drawImGui_for_this_frame(...) (among any others you need).
+    // Make a Dear Im Gui instance via the WOImGui in the engine... This calls
+    // the default Dear ImGui demo that shows all the features... To create your own,
+    // inherit from WOImGui and override WOImGui::drawImGui_for_this_frame(...) (among any others you need).
     WOImGui* gui = WOImGui::New(nullptr);
+
     gui->setLabel("My Gui");
     gui->subscribe_drawImGuiWidget(
-        [this, gui]() //this is a lambda, the capture clause is in [], the input argument list is in (), and the body is in {}
+        [this, gui]() // this is a lambda, the capture clause is in [], the input argument list is in (), and the body is in {}
         {
-            //ImGui::ShowDemoWindow(); //Displays the default ImGui demo from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
-            //WOImGui::draw_AftrImGui_Demo(gui); //Displays a small Aftr Demo from C:/repos/aburn/engine/src/aftr/WOImGui.cpp
-            //ImPlot::ShowDemoWindow(); //Displays the ImPlot demo using ImGui from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
+            Instructions::getInstructions();
+
+    ImGui::Begin("Control Panel");
+
+    ImGui::Checkbox("Center on camera", &center_on_camera);
+    ImGui::Separator();
+
+    ImGui::Text("Translation");
+    ImGui::SliderFloat("Location X [-100, 100]", &prj_block->getPos()->x, -100, 100);
+    ImGui::SliderFloat("Location Y [-100, 100]", &prj_block->getPos()->y, -100, 100);
+    ImGui::SliderFloat("Location Z [2, 100]", &prj_block->getPos()->z, 2, 100);
+    ImGui::Separator();
+
+    ImGui::Text("Relative Rotation");
+    ImGui::SliderFloat("Relative X [-180, 180]", &prj_block->getRelativeRotation()->x, -180, 180);
+    ImGui::SliderFloat("Relative Y [-180, 180]", &prj_block->getRelativeRotation()->y, -180, 180);
+    ImGui::SliderFloat("Relative Z [-180, 180]", &prj_block->getRelativeRotation()->z, -180, 180);
+    ImGui::Separator();
+
+    ImGui::Text("Global Rotation");
+    ImGui::SliderFloat("Global X [-180, 180]", &prj_block->getGlobalRotation()->x, -180, 180);
+    ImGui::SliderFloat("Global Y [-180, 180]", &prj_block->getGlobalRotation()->y, -180, 180);
+    ImGui::SliderFloat("Global Z [-180, 180]", &prj_block->getGlobalRotation()->z, -180, 180);
+
+    ImGui::End();
+    // ImGui::ShowDemoWindow(); //Displays the default ImGui demo from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
+    // WOImGui::draw_AftrImGui_Demo( gui ); //Displays a small Aftr Demo from C:/repos/aburn/engine/src/aftr/WOImGui.cpp
+    // ImPlot::ShowDemoWindow(); //Displays the ImPlot demo using ImGui from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
         });
     this->worldLst->push_back(gui);
 
-    createBlockyWorldWayPoints();
+    //createBlockyWorldWayPoints();
 }
 
+void GLViewBlockyWorld::placeBox(bool proj) {
+
+    WO* wo = nullptr;
+
+    if (proj) {
+        prj_block = Block::New(cube_proj_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+        if (prj_block) {
+            Vector pos = prj_block->getPosition();
+            prj_block->setPosition(pos);
+            prj_block->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
+            prj_block->setLabel("Cube Projection");
+            worldLst->push_back(prj_block);
+        }
+    }
+    else {
+        wo = WO::New(cube_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+
+        Vector pos = prj_block->getPosition();
+        wo->setPosition(pos);
+        //auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
+        //wo->setPosition((lookDirection * 20) + this->getCamera()->getPosition());
+
+        wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+        wo->setLabel("Cube");
+        blocks.push_back(wo);
+        worldLst->push_back(wo);
+    }
+}
+
+void GLViewBlockyWorld::updateProjection()
+{
+    if (prj_block && center_on_camera) {
+        auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
+        auto pos = prj_block->getPos();
+        *pos = (lookDirection * 20) + this->getCamera()->getPosition();
+
+    }
+}
 
 void GLViewBlockyWorld::createBlockyWorldWayPoints()
 {
