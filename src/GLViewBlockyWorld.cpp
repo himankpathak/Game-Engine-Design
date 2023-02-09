@@ -442,7 +442,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
     ImGui::SameLine();
     ImGui::SliderFloat("##rz", &prj_block->getRelativeRotation()->z, -180, 180);
     ImGui::SameLine();
-    ImGui::TextColored(color_orange, "-180");
+    ImGui::TextColored(color_orange, "180");
     ImGui::Separator();
 
 
