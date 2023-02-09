@@ -36,7 +36,7 @@ namespace Aftr
         virtual void onKeyUp(const SDL_KeyboardEvent &key);
         virtual void updateActiveKeys(SDL_KeyCode keycode, bool state);
 
-        virtual void placeBox(bool proj);
+        virtual void placeBlock(bool proj);
         virtual void updateProjection();
 
     protected:

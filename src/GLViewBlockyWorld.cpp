@@ -132,12 +132,12 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
 
     if (key.keysym.sym == SDLK_p)
     {
-        //prj_block->isVisible = !prj_block->isVisible;
+        prj_block->isVisible = !prj_block->isVisible;
     }
 
     if (key.keysym.sym == SDLK_SPACE)
     {
-        placeBox(false);
+        placeBlock(false);
     }
 
     if (key.keysym.sym == SDLK_w)
@@ -289,7 +289,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
         worldLst->push_back(wo);
     }
 
-    placeBox(true);
+    placeBlock(true);
 
     //{
     //   //Create the infinite grass plane that uses the Open Dynamics Engine (ODE)
@@ -391,27 +391,95 @@ void Aftr::GLViewBlockyWorld::loadMap()
         {
             Instructions::getInstructions();
 
+    ImVec4 color_blue = ImVec4{ 0.000f, 0.703f, 0.917f, 1 };
+    ImVec4 color_orange = ImVec4{ 0.901f, 0.494f, 0.133f, 1 };
+
     ImGui::Begin("Control Panel");
-
-    ImGui::Checkbox("Center on camera", &center_on_camera);
+    ImGui::Separator();
+    ImGui::TextColored(color_blue, "Center on camera");
+    ImGui::SameLine();
+    ImGui::Checkbox("##checkbox", &center_on_camera);
     ImGui::Separator();
 
-    ImGui::Text("Translation");
-    ImGui::SliderFloat("Location X [-100, 100]", &prj_block->getPos()->x, -100, 100);
-    ImGui::SliderFloat("Location Y [-100, 100]", &prj_block->getPos()->y, -100, 100);
-    ImGui::SliderFloat("Location Z [2, 100]", &prj_block->getPos()->z, 2, 100);
+    if (center_on_camera)
+        ImGui::BeginDisabled();
+    ImGui::TextColored(color_blue, "Translation");
+    ImGui::TextColored(color_orange, "X Axis");
+    ImGui::TextColored(color_orange, "-100");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##tx", &prj_block->getPos()->x, -100, 100);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "100");
+    ImGui::TextColored(color_orange, "Y Axis");
+    ImGui::TextColored(color_orange, "-100");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##ty", &prj_block->getPos()->y, -100, 100);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "100");
+    ImGui::TextColored(color_orange, "Z Axis");
+    ImGui::TextColored(color_orange, "   0");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##tz", &prj_block->getPos()->z, 0, 100);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "100");
     ImGui::Separator();
 
-    ImGui::Text("Relative Rotation");
-    ImGui::SliderFloat("Relative X [-180, 180]", &prj_block->getRelativeRotation()->x, -180, 180);
-    ImGui::SliderFloat("Relative Y [-180, 180]", &prj_block->getRelativeRotation()->y, -180, 180);
-    ImGui::SliderFloat("Relative Z [-180, 180]", &prj_block->getRelativeRotation()->z, -180, 180);
+    ImGui::TextColored(color_blue, "Relative Rotation");
+    ImGui::TextColored(color_orange, "Relative X Axis");
+    ImGui::TextColored(color_orange, "-180");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##rx", &prj_block->getRelativeRotation()->x, -180, 180);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "180");
+    ImGui::TextColored(color_orange, "Relative Y Axis");
+    ImGui::TextColored(color_orange, "-180");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##ry", &prj_block->getRelativeRotation()->y, -180, 180);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "180");
+    ImGui::TextColored(color_orange, "Relative Z Axis");
+    ImGui::TextColored(color_orange, "-180");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##rz", &prj_block->getRelativeRotation()->z, -180, 180);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "-180");
     ImGui::Separator();
 
-    ImGui::Text("Global Rotation");
-    ImGui::SliderFloat("Global X [-180, 180]", &prj_block->getGlobalRotation()->x, -180, 180);
-    ImGui::SliderFloat("Global Y [-180, 180]", &prj_block->getGlobalRotation()->y, -180, 180);
-    ImGui::SliderFloat("Global Z [-180, 180]", &prj_block->getGlobalRotation()->z, -180, 180);
+
+    ImGui::TextColored(color_blue, "Global Rotation");
+    ImGui::TextColored(color_orange, "Global X Axis");
+    ImGui::TextColored(color_orange, "-180");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##gx", &prj_block->getGlobalRotation()->x, -180, 180);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "180");
+    ImGui::TextColored(color_orange, "Global Y Axis");
+    ImGui::TextColored(color_orange, "-180");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##gy", &prj_block->getGlobalRotation()->y, -180, 180);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "180");
+    ImGui::TextColored(color_orange, "Global Z Axis");
+    ImGui::TextColored(color_orange, "-180");
+    ImGui::SameLine();
+    ImGui::SliderFloat("##gz", &prj_block->getGlobalRotation()->z, -180, 180);
+    ImGui::SameLine();
+    ImGui::TextColored(color_orange, "180");
+    ImGui::Separator();
+    if (center_on_camera)
+        ImGui::EndDisabled();
+
+    ImVec2 button_size = ImVec2{ 150, 0 };
+    float width = ImGui::GetWindowSize().x;
+    float centre_pos = (width - button_size.x) / 2;
+    ImGui::SetCursorPosX(centre_pos);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.752f, 0.223f, 0.168f, 1 });
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.905f, 0.298f, 0.235f, 1 });
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.905f, 0.298f, 0.235f, 1 });
+    if (ImGui::Button("Place Block!", button_size)) {
+        placeBlock(false);
+    }
+    ImGui::PopStyleColor(3);
 
     ImGui::End();
     // ImGui::ShowDemoWindow(); //Displays the default ImGui demo from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
@@ -423,27 +491,23 @@ void Aftr::GLViewBlockyWorld::loadMap()
     //createBlockyWorldWayPoints();
 }
 
-void GLViewBlockyWorld::placeBox(bool proj) {
-
-    WO* wo = nullptr;
+void GLViewBlockyWorld::placeBlock(bool proj) {
 
     if (proj) {
         prj_block = Block::New(cube_proj_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
-        if (prj_block) {
-            Vector pos = prj_block->getPosition();
-            prj_block->setPosition(pos);
-            prj_block->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
-            prj_block->setLabel("Cube Projection");
-            worldLst->push_back(prj_block);
-        }
+        prj_block->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
+        prj_block->setLabel("Cube Projection");
+        worldLst->push_back(prj_block);
+
     }
     else {
-        wo = WO::New(cube_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+        WO* wo = WO::New(cube_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
 
-        Vector pos = prj_block->getPosition();
+        // Transfer pose data from projection to new block
+        auto pos = prj_block->getPosition();
+        auto dm = prj_block->getDisplayMatrix();
         wo->setPosition(pos);
-        //auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
-        //wo->setPosition((lookDirection * 20) + this->getCamera()->getPosition());
+        wo->setDisplayMatrix(dm);
 
         wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
         wo->setLabel("Cube");
