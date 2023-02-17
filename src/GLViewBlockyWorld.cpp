@@ -142,48 +142,27 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
 
     if (key.keysym.sym == SDLK_w)
     {
-        auto lookDirection = this->getCamera()->getLookDirection();
-        this->getCamera()->moveRelative(lookDirection);
-
+        active_keys[SDLK_w] = true;
     }
-
     if (key.keysym.sym == SDLK_s)
     {
-        // auto vel = this->getCamera()->getCameraVelocity();
-        auto lookDirection = this->getCamera()->getLookDirection();
-        this->getCamera()->moveRelative(lookDirection * -1);
+        active_keys[SDLK_s] = true;
     }
-
     if (key.keysym.sym == SDLK_d)
     {
-        auto lookDirection = this->getCamera()->getLookDirection();
-        auto normalDirection = this->getCamera()->getNormalDirection();
-
-        this->getCamera()->moveRelative(lookDirection.crossProduct(normalDirection));
+        active_keys[SDLK_d] = true;
     }
-
     if (key.keysym.sym == SDLK_a)
     {
-        auto lookDirection = this->getCamera()->getLookDirection();
-        auto normalDirection = this->getCamera()->getNormalDirection();
-
-        this->getCamera()->moveRelative(lookDirection.crossProduct(normalDirection) * -1);
+        active_keys[SDLK_a] = true;
     }
-
     if (key.keysym.sym == SDLK_LSHIFT)
     {
-        auto lookDirection = this->getCamera()->getLookDirection();
-        auto normalDirection = this->getCamera()->getLookDirection();
-
-        this->getCamera()->moveRelative(Vector(0, 0, 1));
+        active_keys[SDLK_LSHIFT] = true;
     }
-
     if (key.keysym.sym == SDLK_LCTRL)
     {
-        auto lookDirection = this->getCamera()->getLookDirection();
-        auto normalDirection = this->getCamera()->getLookDirection();
-
-        this->getCamera()->moveRelative(Vector(0, 0, -1));
+        active_keys[SDLK_LCTRL] = true;
     }
 }
 
@@ -191,6 +170,31 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
 void GLViewBlockyWorld::onKeyUp(const SDL_KeyboardEvent& key)
 {
     GLView::onKeyUp(key);
+
+    if (key.keysym.sym == SDLK_w)
+    {
+        active_keys[SDLK_w] = false;
+    }
+    if (key.keysym.sym == SDLK_s)
+    {
+        active_keys[SDLK_s] = false;
+    }
+    if (key.keysym.sym == SDLK_d)
+    {
+        active_keys[SDLK_d] = false;
+    }
+    if (key.keysym.sym == SDLK_a)
+    {
+        active_keys[SDLK_a] = false;
+    }
+    if (key.keysym.sym == SDLK_LSHIFT)
+    {
+        active_keys[SDLK_LSHIFT] = false;
+    }
+    if (key.keysym.sym == SDLK_LCTRL)
+    {
+        active_keys[SDLK_LCTRL] = false;
+    }
 }
 
 void GLViewBlockyWorld::updateActiveKeys(SDL_KeyCode keycode, bool state)
@@ -491,6 +495,64 @@ void Aftr::GLViewBlockyWorld::loadMap()
     //createBlockyWorldWayPoints();
 }
 
+void GLViewBlockyWorld::updateControls()
+{
+    if (active_keys[SDLK_w])
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        this->getCamera()->moveRelative(lookDirection * this->getCamera()->getCameraVelocity());
+
+    }
+
+    if (active_keys[SDLK_s])
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        this->getCamera()->moveRelative(lookDirection * -1 * this->getCamera()->getCameraVelocity());
+    }
+
+    if (active_keys[SDLK_d])
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getNormalDirection();
+
+        this->getCamera()->moveRelative(lookDirection.crossProduct(normalDirection) * this->getCamera()->getCameraVelocity());
+    }
+
+    if (active_keys[SDLK_a])
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getNormalDirection();
+
+        this->getCamera()->moveRelative(lookDirection.crossProduct(normalDirection) * -1 * this->getCamera()->getCameraVelocity());
+    }
+
+    if (active_keys[SDLK_LSHIFT])
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getLookDirection();
+
+        this->getCamera()->moveRelative(Vector(0, 0, 1) * this->getCamera()->getCameraVelocity());
+    }
+
+    if (active_keys[SDLK_LCTRL])
+    {
+        auto lookDirection = this->getCamera()->getLookDirection();
+        auto normalDirection = this->getCamera()->getLookDirection();
+
+        this->getCamera()->moveRelative(Vector(0, 0, -1) * this->getCamera()->getCameraVelocity());
+    }
+}
+
+void GLViewBlockyWorld::updateProjection()
+{
+    if (prj_block && center_on_camera) {
+        auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
+        auto pos = prj_block->getPos();
+        *pos = (lookDirection * 20) + this->getCamera()->getPosition();
+
+    }
+}
+
 void GLViewBlockyWorld::placeBlock(bool proj) {
 
     if (proj) {
@@ -513,15 +575,6 @@ void GLViewBlockyWorld::placeBlock(bool proj) {
         wo->setLabel("Cube");
         blocks.push_back(wo);
         worldLst->push_back(wo);
-    }
-}
-
-void GLViewBlockyWorld::updateProjection()
-{
-    if (prj_block && center_on_camera) {
-        auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
-        auto pos = prj_block->getPos();
-        *pos = (lookDirection * 20) + this->getCamera()->getPosition();
 
     }
 }

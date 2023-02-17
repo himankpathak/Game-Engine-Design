@@ -36,8 +36,9 @@ namespace Aftr
         virtual void onKeyUp(const SDL_KeyboardEvent &key);
         virtual void updateActiveKeys(SDL_KeyCode keycode, bool state);
 
-        virtual void placeBlock(bool proj);
+        virtual void updateControls();
         virtual void updateProjection();
+        virtual void placeBlock(bool proj);
 
     protected:
         GLViewBlockyWorld(const std::vector<std::string> &args);
