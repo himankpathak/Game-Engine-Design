@@ -93,7 +93,31 @@ void GLViewBlockyWorld::updateWorld()
     //If you want to add additional functionality, do it after
     //this call.
 
+    updateControls();
     updateProjection();
+
+    if (bg_music) {
+        bg_music->setVolume(bg_music_vol);
+
+        if (bg_music_playing && bg_music->getIsPaused()) {
+            bg_music->setIsPaused(false);
+        }
+        else if (!bg_music_playing && !bg_music->getIsPaused()) {
+            bg_music->setIsPaused(true);
+        }
+    }
+
+    auto position = this->getCamera()->getPosition();
+    auto lookDir = this->getCamera()->getLookDirection();
+    auto normalDir = this->getCamera()->getNormalDirection() * Vector(1.0, 1.0, -1.0);
+
+    this->soundEngine->setListenerPosition(
+        irrklang::vec3df(position.x, position.y, position.z),
+        irrklang::vec3df(lookDir.x, lookDir.y, lookDir.z),
+        irrklang::vec3df(abs(position.x - prev_pos.x) * 10, abs(position.y - prev_pos.y) * 10, abs(position.z - prev_pos.z) * 10),
+        irrklang::vec3df(normalDir.x, normalDir.y, normalDir.z));
+
+    prev_pos = position;
 }
 
 
@@ -118,9 +142,20 @@ void GLViewBlockyWorld::onMouseUp(const SDL_MouseButtonEvent& e)
 void GLViewBlockyWorld::onMouseMove(const SDL_MouseMotionEvent& e)
 {
     GLView::onMouseMove(e);
-    //updateProjection();
 }
 
+void GLViewBlockyWorld::onMouseWheelScroll(const SDL_MouseWheelEvent& e)
+{
+    GLView::onMouseWheelScroll(e);
+
+    auto cvel = this->getCamera()->getCameraVelocity();
+    if (e.y > 0) {
+        this->getCamera()->setCameraVelocity(cvel + 0.25);
+    }
+    else if (e.y < 0 && cvel > 0.5) {
+        this->getCamera()->setCameraVelocity(cvel - 0.25);
+    }
+}
 
 void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
 {
@@ -216,9 +251,22 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
     this->cam->setPosition(0, 0, 10);
 
+    soundEngine = irrklang::createIrrKlangDevice();
+    bg_music = soundEngine->play2D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Wehrmut_Godmode.mp3").c_str(), true, false, true);
+
+    irrklang::ISoundSource* ss1 = soundEngine->addSoundSourceFromFile((ManagerEnvironmentConfiguration::getLMM() + "/sounds/BlockSound1.mp3").c_str());
+    auto ssa1 = soundEngine->addSoundSourceAlias(ss1, "BlockSound1");
+    ssa1->setDefaultMinDistance(20);
+
+    irrklang::ISoundSource* ss2 = soundEngine->addSoundSourceFromFile((ManagerEnvironmentConfiguration::getLMM() + "/sounds/BlockSound2.mp3").c_str());
+    auto ssa2 = soundEngine->addSoundSourceAlias(ss2, "BlockSound2");
+    ssa2->setDefaultMinDistance(20);
+
     cube_proj_loc = ManagerEnvironmentConfiguration::getLMM() + "/models/cube4x4x4redShinyPlastic_transparent.wrl";
     //cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/Aircraft/f35/f35.3ds";
     cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl";
+
+    std::string sound_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/DefenseDaemon/Doppler/doppler.3ds";
 
     std::string wheeledCar(ManagerEnvironmentConfiguration::getSMM() + "/models/rcx_treads.wrl");
     std::string grass(ManagerEnvironmentConfiguration::getSMM() + "/models/grassFloor400x400_pp.wrl");
@@ -294,6 +342,20 @@ void Aftr::GLViewBlockyWorld::loadMap()
     }
 
     placeBlock(true);
+
+    {
+        WO* wo = WO::New(sound_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstSMOOTH);
+        wo->setPosition(Vector(180, 180, 15));
+        wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+        wo->setLabel("SoundEmitter");
+        worldLst->push_back(wo);
+
+        auto sound = soundEngine->play3D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Sci-Fi_Atmos.mp3").c_str(), irrklang::vec3df(180, 180, 15), true, false, true, irrklang::E_STREAM_MODE(0), true);
+        sound->setVolume(0.8f);
+        sound->setMinDistance(20);
+        auto sec = sound->getSoundEffectControl();
+        sec->enableEchoSoundEffect();
+    }
 
     //{
     //   //Create the infinite grass plane that uses the Open Dynamics Engine (ODE)
@@ -398,11 +460,19 @@ void Aftr::GLViewBlockyWorld::loadMap()
     ImVec4 color_blue = ImVec4{ 0.000f, 0.703f, 0.917f, 1 };
     ImVec4 color_orange = ImVec4{ 0.901f, 0.494f, 0.133f, 1 };
 
+    ImGui::Begin("Sound Settings");
+    ImGui::Separator();
+    ImGui::TextColored(color_orange, "Background Music");
+    ImGui::SameLine();
+    ImGui::Checkbox("##bg_music_playing", &bg_music_playing);
+    ImGui::SliderFloat("##bg_music_vol", &bg_music_vol, 0, 1);
+    ImGui::End();
+
     ImGui::Begin("Control Panel");
     ImGui::Separator();
     ImGui::TextColored(color_blue, "Center on camera");
     ImGui::SameLine();
-    ImGui::Checkbox("##checkbox", &center_on_camera);
+    ImGui::Checkbox("##centercamera", &center_on_camera);
     ImGui::Separator();
 
     if (center_on_camera)
@@ -576,6 +646,7 @@ void GLViewBlockyWorld::placeBlock(bool proj) {
         blocks.push_back(wo);
         worldLst->push_back(wo);
 
+        soundEngine->play3D(rand() % 2 ? "BlockSound1" : "BlockSound2", irrklang::vec3df(pos.x, pos.y, pos.z));
     }
 }
 

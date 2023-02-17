@@ -3,6 +3,7 @@
 #include "GLView.h"
 #include "Instructions.h"
 #include "Block.h"
+#include "irrKlang.h"
 
 namespace Aftr
 {
@@ -32,6 +33,7 @@ namespace Aftr
         virtual void onMouseDown(const SDL_MouseButtonEvent &e);
         virtual void onMouseUp(const SDL_MouseButtonEvent &e);
         virtual void onMouseMove(const SDL_MouseMotionEvent &e);
+        virtual void onMouseWheelScroll(const SDL_MouseWheelEvent& e);
         virtual void onKeyDown(const SDL_KeyboardEvent &key);
         virtual void onKeyUp(const SDL_KeyboardEvent &key);
         virtual void updateActiveKeys(SDL_KeyCode keycode, bool state);
@@ -47,9 +49,15 @@ namespace Aftr
         std::string cube_loc, cube_proj_loc;
         bool center_on_camera = true;
         std::map<SDL_KeyCode, bool> active_keys;
+        Aftr::Vector prev_pos;
 
         std::vector<WO*> blocks;
         Block* prj_block;
+
+        irrklang::ISoundEngine* soundEngine;
+        irrklang::ISound* bg_music;
+        bool bg_music_playing = true;
+        float bg_music_vol = 0.2f;
     };
 
     /** \} */
