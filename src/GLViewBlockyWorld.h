@@ -40,6 +40,7 @@ namespace Aftr
 
         virtual void updateControls();
         virtual void updateProjection();
+        virtual void updateMusicSettings();
         virtual void placeBlock(bool proj);
 
     protected:
@@ -56,8 +57,10 @@ namespace Aftr
 
         irrklang::ISoundEngine* soundEngine;
         irrklang::ISound* bg_music;
-        bool bg_music_playing = true;
+        irrklang::ISound* spooky_music;
         float bg_music_vol = 0.2f;
+        std::map<std::string, bool> music_flags;
+
     };
 
     /** \} */

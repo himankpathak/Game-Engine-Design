@@ -95,29 +95,8 @@ void GLViewBlockyWorld::updateWorld()
 
     updateControls();
     updateProjection();
-
-    if (bg_music) {
-        bg_music->setVolume(bg_music_vol);
-
-        if (bg_music_playing && bg_music->getIsPaused()) {
-            bg_music->setIsPaused(false);
-        }
-        else if (!bg_music_playing && !bg_music->getIsPaused()) {
-            bg_music->setIsPaused(true);
-        }
-    }
-
-    auto position = this->getCamera()->getPosition();
-    auto lookDir = this->getCamera()->getLookDirection();
-    auto normalDir = this->getCamera()->getNormalDirection() * Vector(1.0, 1.0, -1.0);
-
-    this->soundEngine->setListenerPosition(
-        irrklang::vec3df(position.x, position.y, position.z),
-        irrklang::vec3df(lookDir.x, lookDir.y, lookDir.z),
-        irrklang::vec3df(abs(position.x - prev_pos.x) * 10, abs(position.y - prev_pos.y) * 10, abs(position.z - prev_pos.z) * 10),
-        irrklang::vec3df(normalDir.x, normalDir.y, normalDir.z));
-
-    prev_pos = position;
+    updateMusicSettings();
+    
 }
 
 
@@ -252,7 +231,8 @@ void Aftr::GLViewBlockyWorld::loadMap()
     this->cam->setPosition(0, 0, 10);
 
     soundEngine = irrklang::createIrrKlangDevice();
-    bg_music = soundEngine->play2D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Wehrmut_Godmode.mp3").c_str(), true, false, true);
+    bg_music = soundEngine->play2D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Wehrmut_Godmode.mp3").c_str(), true, false, true, irrklang::E_STREAM_MODE(0), true);
+    music_flags["bg_music_playing"] = true;
 
     irrklang::ISoundSource* ss1 = soundEngine->addSoundSourceFromFile((ManagerEnvironmentConfiguration::getLMM() + "/sounds/BlockSound1.mp3").c_str());
     auto ssa1 = soundEngine->addSoundSourceAlias(ss1, "BlockSound1");
@@ -350,10 +330,10 @@ void Aftr::GLViewBlockyWorld::loadMap()
         wo->setLabel("SoundEmitter");
         worldLst->push_back(wo);
 
-        auto sound = soundEngine->play3D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Sci-Fi_Atmos.mp3").c_str(), irrklang::vec3df(180, 180, 15), true, false, true, irrklang::E_STREAM_MODE(0), true);
-        sound->setVolume(0.8f);
-        sound->setMinDistance(20);
-        auto sec = sound->getSoundEffectControl();
+        spooky_music = soundEngine->play3D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Sci-Fi_Atmos.mp3").c_str(), irrklang::vec3df(180, 180, 15), true, true, true, irrklang::E_STREAM_MODE(0), true);
+        spooky_music->setVolume(0.8f);
+        spooky_music->setMinDistance(20);
+        auto sec = spooky_music->getSoundEffectControl();
         sec->enableEchoSoundEffect();
     }
 
@@ -462,13 +442,25 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
     ImGui::Begin("Sound Settings");
     ImGui::Separator();
+    ImGui::TextColored(color_orange, "Spooky Music");
+    ImGui::SameLine();
+    ImGui::Checkbox("##spooky_music", &music_flags["spooky_music_playing"]);
+    ImGui::Separator();
     ImGui::TextColored(color_orange, "Background Music");
     ImGui::SameLine();
-    ImGui::Checkbox("##bg_music_playing", &bg_music_playing);
+    ImGui::Checkbox("##bg_music_playing", &music_flags["bg_music_playing"]);
     ImGui::SliderFloat("##bg_music_vol", &bg_music_vol, 0, 1);
+    ImGui::Separator();
+    ImGui::TextColored(color_blue, "Background Sound Effects");
+
+    ImGui::Checkbox("Echo Effect", &music_flags["bg_echo"]);
+    ImGui::Checkbox("Waves Reverb Effect", &music_flags["bg_waves"]);
+    ImGui::Checkbox("Distort Effect", &music_flags["bg_distort"]);
+    ImGui::Checkbox("Gargle Effect", &music_flags["bg_gargle"]);
+    
     ImGui::End();
 
-    ImGui::Begin("Control Panel");
+    ImGui::Begin("Controls");
     ImGui::Separator();
     ImGui::TextColored(color_blue, "Center on camera");
     ImGui::SameLine();
@@ -621,6 +613,65 @@ void GLViewBlockyWorld::updateProjection()
         *pos = (lookDirection * 20) + this->getCamera()->getPosition();
 
     }
+}
+
+void GLViewBlockyWorld::updateMusicSettings()
+{
+    if (bg_music) {
+        bg_music->setVolume(bg_music_vol);
+
+        if (music_flags["bg_music_playing"] && bg_music->getIsPaused()) {
+            bg_music->setIsPaused(false);
+        }
+        else if (!music_flags["bg_music_playing"] && !bg_music->getIsPaused()) {
+            bg_music->setIsPaused(true);
+        }
+
+        auto control = bg_music->getSoundEffectControl();
+        if (music_flags["bg_echo"] && !control->isEchoSoundEffectEnabled()) {
+            control->enableEchoSoundEffect();
+        }
+        else if (!music_flags["bg_echo"] && control->isEchoSoundEffectEnabled()) {
+            control->disableEchoSoundEffect();
+        }
+        if (music_flags["bg_waves"] && !control->isWavesReverbSoundEffectEnabled()) {
+            control->enableWavesReverbSoundEffect();
+        }
+        else if (!music_flags["bg_waves"] && control->isWavesReverbSoundEffectEnabled()) {
+            control->disableWavesReverbSoundEffect();
+        }
+        if (music_flags["bg_distort"] && !control->isDistortionSoundEffectEnabled()) {
+            control->enableDistortionSoundEffect();
+        }
+        else if (!music_flags["bg_distort"] && control->isDistortionSoundEffectEnabled()) {
+            control->disableDistortionSoundEffect();
+        }
+        if (music_flags["bg_gargle"] && !control->isGargleSoundEffectEnabled()) {
+            control->enableGargleSoundEffect();
+        }
+        else if (!music_flags["bg_gargle"] && control->isGargleSoundEffectEnabled()) {
+            control->disableGargleSoundEffect();
+        }
+    }
+
+    if (music_flags["spooky_music_playing"] && spooky_music->getIsPaused()) {
+        spooky_music->setIsPaused(false);
+    }
+    else if (!music_flags["spooky_music_playing"] && !spooky_music->getIsPaused()) {
+        spooky_music->setIsPaused(true);
+    }
+
+    auto position = this->getCamera()->getPosition();
+    auto lookDir = this->getCamera()->getLookDirection();
+    auto normalDir = this->getCamera()->getNormalDirection() * Vector(1.0, 1.0, -1.0);
+
+    this->soundEngine->setListenerPosition(
+        irrklang::vec3df(position.x, position.y, position.z),
+        irrklang::vec3df(lookDir.x, lookDir.y, lookDir.z),
+        irrklang::vec3df(abs(position.x - prev_pos.x) * 10, abs(position.y - prev_pos.y) * 10, abs(position.z - prev_pos.z) * 10),
+        irrklang::vec3df(normalDir.x, normalDir.y, normalDir.z));
+
+    prev_pos = position;
 }
 
 void GLViewBlockyWorld::placeBlock(bool proj) {
