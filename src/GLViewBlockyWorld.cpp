@@ -129,10 +129,10 @@ void GLViewBlockyWorld::onMouseWheelScroll(const SDL_MouseWheelEvent& e)
 
     auto cvel = this->getCamera()->getCameraVelocity();
     if (e.y > 0) {
-        this->getCamera()->setCameraVelocity(cvel + 0.25);
+        this->getCamera()->setCameraVelocity(cvel + 0.25f);
     }
     else if (e.y < 0 && cvel > 0.5) {
-        this->getCamera()->setCameraVelocity(cvel - 0.25);
+        this->getCamera()->setCameraVelocity(cvel - 0.25f);
     }
 }
 
@@ -232,6 +232,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
     soundEngine = irrklang::createIrrKlangDevice();
     bg_music = soundEngine->play2D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Wehrmut_Godmode.mp3").c_str(), true, false, true, irrklang::E_STREAM_MODE(0), true);
+    bg_music->setVolume(0.2f);
     music_flags["bg_music_playing"] = true;
 
     irrklang::ISoundSource* ss1 = soundEngine->addSoundSourceFromFile((ManagerEnvironmentConfiguration::getLMM() + "/sounds/BlockSound1.mp3").c_str());
