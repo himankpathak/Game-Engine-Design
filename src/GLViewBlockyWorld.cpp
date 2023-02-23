@@ -96,7 +96,7 @@ void GLViewBlockyWorld::updateWorld()
     updateControls();
     updateProjection();
     updateMusicSettings();
-    
+
 }
 
 
@@ -147,6 +147,16 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
     if (key.keysym.sym == SDLK_p)
     {
         prj_block->isVisible = !prj_block->isVisible;
+    }
+
+    if (key.keysym.sym == SDLK_c)
+    {
+        if (camera_mode == "close") {
+            camera_mode = "free";
+        }
+        else {
+            camera_mode = "close";
+        }
     }
 
     if (key.keysym.sym == SDLK_SPACE)
@@ -226,7 +236,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
     ManagerOpenGLState::GL_NEAR_PLANE = 0.1f;
     ManagerOpenGLState::enableFrustumCulling = false;
     Axes::isVisible = true;
-    this->glRenderer->isUsingShadowMapping(false); //set to TRUE to enable shadow mapping, must be using GL 3.2+
+    this->glRenderer->isUsingShadowMapping(true); //set to TRUE to enable shadow mapping, must be using GL 3.2+
 
     this->cam->setPosition(0, 0, 10);
 
@@ -242,6 +252,8 @@ void Aftr::GLViewBlockyWorld::loadMap()
     irrklang::ISoundSource* ss2 = soundEngine->addSoundSourceFromFile((ManagerEnvironmentConfiguration::getLMM() + "/sounds/BlockSound2.mp3").c_str());
     auto ssa2 = soundEngine->addSoundSourceAlias(ss2, "BlockSound2");
     ssa2->setDefaultMinDistance(20);
+
+    std::string player_loc = ManagerEnvironmentConfiguration::getLMM() + "/models/steve.obj";
 
     cube_proj_loc = ManagerEnvironmentConfiguration::getLMM() + "/models/cube4x4x4redShinyPlastic_transparent.wrl";
     //cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/Aircraft/f35/f35.3ds";
@@ -290,7 +302,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
         light->setPosition(Vector(0, 0, 100));
         // Set the light's display matrix such that it casts light in a direction parallel to the -z axis (ie, downwards as though it was "high noon")
         // for shadow mapping to work, this->glRenderer->isUsingShadowMapping( true ), must be invoked.
-        light->getModel()->setDisplayMatrix(Mat4::rotateIdentityMat({ 0, 1, 0 }, 90.0f * Aftr::DEGtoRAD));
+        light->getModel()->setDisplayMatrix(Mat4::rotateIdentityMat({ 0, 1, 0 }, 120.0f * Aftr::DEGtoRAD));
         light->setLabel("Light");
         worldLst->push_back(light);
     }
@@ -320,6 +332,14 @@ void Aftr::GLViewBlockyWorld::loadMap()
             });
         wo->setLabel("Grass");
         worldLst->push_back(wo);
+    }
+
+    {
+        // Create player model
+        player = Block::New(player_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstSMOOTH);
+        player->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+        player->setLabel("Player");
+        worldLst->push_back(player);
     }
 
     placeBlock(true);
@@ -458,7 +478,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
     ImGui::Checkbox("Waves Reverb Effect", &music_flags["bg_waves"]);
     ImGui::Checkbox("Distort Effect", &music_flags["bg_distort"]);
     ImGui::Checkbox("Gargle Effect", &music_flags["bg_gargle"]);
-    
+
     ImGui::End();
 
     ImGui::Begin("Controls");
@@ -608,10 +628,24 @@ void GLViewBlockyWorld::updateControls()
 
 void GLViewBlockyWorld::updateProjection()
 {
+    if (camera_mode == "close") {
+        auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
+        auto pos = player->getPosition();
+        pos = (lookDirection * 15) + this->getCamera()->getPosition();
+        pos.z -= 5;
+        if (pos.z < 4) pos.z = 4;
+        player->setPosition(pos);
+
+        auto rotateByInZ = lookDirection.x * 90 - 90;
+        if (lookDirection.y > 0) rotateByInZ *= -1;
+        player->getRelativeRotation()->z = rotateByInZ;
+    }
+
     if (prj_block && center_on_camera) {
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
         auto pos = prj_block->getPos();
         *pos = (lookDirection * 20) + this->getCamera()->getPosition();
+        if (pos->z < 2) pos->z = 2;
 
     }
 }

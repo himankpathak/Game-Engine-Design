@@ -48,12 +48,14 @@ namespace Aftr
         virtual void onCreate();
 
         std::string cube_loc, cube_proj_loc;
+        std::string camera_mode = "close";
         bool center_on_camera = true;
         std::map<SDL_KeyCode, bool> active_keys;
         Aftr::Vector prev_pos;
 
         std::vector<WO*> blocks;
         Block* prj_block;
+        Block* player;
 
         irrklang::ISoundEngine* soundEngine;
         irrklang::ISound* bg_music;
