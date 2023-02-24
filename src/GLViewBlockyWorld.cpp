@@ -141,7 +141,9 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
     if (key.keysym.sym == SDLK_0)
         this->setNumPhysicsStepsPerRender(1);
 
-    //updateProjection();
+    if (key.keysym.sym >= 48 && key.keysym.sym <= 57) {
+        active_block_index = key.keysym.sym - 48;
+    }
 
     if (key.keysym.sym == SDLK_p)
     {
@@ -241,7 +243,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
     Axes::isVisible = true;
     this->glRenderer->isUsingShadowMapping(true); //set to TRUE to enable shadow mapping, must be using GL 3.2+
 
-    this->cam->setPosition(0, 0, 10);
+    this->cam->setPosition(0, 0, 15);
 
     soundEngine = irrklang::createIrrKlangDevice();
     bg_music = soundEngine->play2D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Wehrmut_Godmode.mp3").c_str(), true, false, true, irrklang::E_STREAM_MODE(0), true);
@@ -258,7 +260,17 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
     std::string player_loc = ManagerEnvironmentConfiguration::getLMM() + "/models/steve.obj";
 
-    cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl";
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Blatt.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Erde.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Diamanterz.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Glowstone.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Lapislazulierz.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Stein.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Obsidian.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Redstone-Erz.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Stein.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Wasser.3ds");
 
     std::string sound_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/DefenseDaemon/Doppler/doppler.3ds";
 
@@ -584,6 +596,7 @@ void GLViewBlockyWorld::updateControls()
     if (active_keys[SDLK_w])
     {
         auto lookDirection = this->getCamera()->getLookDirection();
+        lookDirection.z = 0;
         this->getCamera()->moveRelative(lookDirection * this->getCamera()->getCameraVelocity());
 
     }
@@ -591,6 +604,7 @@ void GLViewBlockyWorld::updateControls()
     if (active_keys[SDLK_s])
     {
         auto lookDirection = this->getCamera()->getLookDirection();
+        lookDirection.z = 0;
         this->getCamera()->moveRelative(lookDirection * -1 * this->getCamera()->getCameraVelocity());
     }
 
@@ -711,7 +725,7 @@ void GLViewBlockyWorld::updateMusicSettings()
 
 void GLViewBlockyWorld::placeBlock(bool proj) {
     if (proj) {
-        prj_block = Block::New(cube_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+        prj_block = Block::New(blocks_loc[0], Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
         prj_block->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
         prj_block->setLabel("Cube Projection");
 
@@ -729,7 +743,7 @@ void GLViewBlockyWorld::placeBlock(bool proj) {
 
     }
     else {
-        WO* wo = WO::New(cube_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+        WO* wo = WO::New(blocks_loc[active_block_index], active_block_index == 0 ? Vector(1, 1, 1) : Vector(4, 4, 4), MESH_SHADING_TYPE::mstFLAT);
 
         // Transfer pose data from projection to new block
         auto pos = prj_block->getPosition();
