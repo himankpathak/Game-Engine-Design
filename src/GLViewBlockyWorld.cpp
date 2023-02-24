@@ -96,7 +96,6 @@ void GLViewBlockyWorld::updateWorld()
     updateControls();
     updateProjection();
     updateMusicSettings();
-
 }
 
 
@@ -147,6 +146,10 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
     if (key.keysym.sym == SDLK_p)
     {
         prj_block->isVisible = !prj_block->isVisible;
+    }
+
+    if (key.keysym.sym == SDLK_TAB) {
+        prj_block->getModel()->useNextSkin();
     }
 
     if (key.keysym.sym == SDLK_c)
@@ -255,8 +258,6 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
     std::string player_loc = ManagerEnvironmentConfiguration::getLMM() + "/models/steve.obj";
 
-    cube_proj_loc = ManagerEnvironmentConfiguration::getLMM() + "/models/cube4x4x4redShinyPlastic_transparent.wrl";
-    //cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/Aircraft/f35/f35.3ds";
     cube_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl";
 
     std::string sound_loc = ManagerEnvironmentConfiguration::getSMM() + "/models/DefenseDaemon/Doppler/doppler.3ds";
@@ -324,11 +325,11 @@ void Aftr::GLViewBlockyWorld::loadMap()
         wo->upon_async_model_loaded([wo]()
             {
                 ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
-        grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
-        grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f));  // Color of object when it is not in any light
-        grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));  // Diffuse color components (ie, matte shading color of this object)
-        grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); // Specular color component (ie, how "shiney" it is)
-        grassSkin.setSpecularCoefficient(10);                       // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+                grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
+                grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f));  // Color of object when it is not in any light
+                grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));  // Diffuse color components (ie, matte shading color of this object)
+                grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); // Specular color component (ie, how "shiney" it is)
+                grassSkin.setSpecularCoefficient(10);                       // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
             });
         wo->setLabel("Grass");
         worldLst->push_back(wo);
@@ -458,120 +459,120 @@ void Aftr::GLViewBlockyWorld::loadMap()
         {
             Instructions::getInstructions();
 
-    ImVec4 color_blue = ImVec4{ 0.000f, 0.703f, 0.917f, 1 };
-    ImVec4 color_orange = ImVec4{ 0.901f, 0.494f, 0.133f, 1 };
+            ImVec4 color_blue = ImVec4{ 0.000f, 0.703f, 0.917f, 1 };
+            ImVec4 color_orange = ImVec4{ 0.901f, 0.494f, 0.133f, 1 };
 
-    ImGui::Begin("Sound Settings");
-    ImGui::Separator();
-    ImGui::TextColored(color_orange, "Spooky Music");
-    ImGui::SameLine();
-    ImGui::Checkbox("##spooky_music", &music_flags["spooky_music_playing"]);
-    ImGui::Separator();
-    ImGui::TextColored(color_orange, "Background Music");
-    ImGui::SameLine();
-    ImGui::Checkbox("##bg_music_playing", &music_flags["bg_music_playing"]);
-    ImGui::SliderFloat("##bg_music_vol", &bg_music_vol, 0, 1);
-    ImGui::Separator();
-    ImGui::TextColored(color_blue, "Background Sound Effects");
+            ImGui::Begin("Sound Settings");
+            ImGui::Separator();
+            ImGui::TextColored(color_orange, "Spooky Music");
+            ImGui::SameLine();
+            ImGui::Checkbox("##spooky_music", &music_flags["spooky_music_playing"]);
+            ImGui::Separator();
+            ImGui::TextColored(color_orange, "Background Music");
+            ImGui::SameLine();
+            ImGui::Checkbox("##bg_music_playing", &music_flags["bg_music_playing"]);
+            ImGui::SliderFloat("##bg_music_vol", &bg_music_vol, 0, 1);
+            ImGui::Separator();
+            ImGui::TextColored(color_blue, "Background Sound Effects");
 
-    ImGui::Checkbox("Echo Effect", &music_flags["bg_echo"]);
-    ImGui::Checkbox("Waves Reverb Effect", &music_flags["bg_waves"]);
-    ImGui::Checkbox("Distort Effect", &music_flags["bg_distort"]);
-    ImGui::Checkbox("Gargle Effect", &music_flags["bg_gargle"]);
+            ImGui::Checkbox("Echo Effect", &music_flags["bg_echo"]);
+            ImGui::Checkbox("Waves Reverb Effect", &music_flags["bg_waves"]);
+            ImGui::Checkbox("Distort Effect", &music_flags["bg_distort"]);
+            ImGui::Checkbox("Gargle Effect", &music_flags["bg_gargle"]);
 
-    ImGui::End();
+            ImGui::End();
 
-    ImGui::Begin("Controls");
-    ImGui::Separator();
-    ImGui::TextColored(color_blue, "Center on camera");
-    ImGui::SameLine();
-    ImGui::Checkbox("##centercamera", &center_on_camera);
-    ImGui::Separator();
+            ImGui::Begin("Controls");
+            ImGui::Separator();
+            ImGui::TextColored(color_blue, "Center on camera");
+            ImGui::SameLine();
+            ImGui::Checkbox("##centercamera", &center_on_camera);
+            ImGui::Separator();
 
-    if (center_on_camera)
-        ImGui::BeginDisabled();
-    ImGui::TextColored(color_blue, "Translation");
-    ImGui::TextColored(color_orange, "X Axis");
-    ImGui::TextColored(color_orange, "-100");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##tx", &prj_block->getPos()->x, -100, 100);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "100");
-    ImGui::TextColored(color_orange, "Y Axis");
-    ImGui::TextColored(color_orange, "-100");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##ty", &prj_block->getPos()->y, -100, 100);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "100");
-    ImGui::TextColored(color_orange, "Z Axis");
-    ImGui::TextColored(color_orange, "   0");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##tz", &prj_block->getPos()->z, 0, 100);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "100");
-    ImGui::Separator();
+            if (center_on_camera)
+                ImGui::BeginDisabled();
+            ImGui::TextColored(color_blue, "Translation");
+            ImGui::TextColored(color_orange, "X Axis");
+            ImGui::TextColored(color_orange, "-100");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##tx", &prj_block->getPos()->x, -100, 100);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "100");
+            ImGui::TextColored(color_orange, "Y Axis");
+            ImGui::TextColored(color_orange, "-100");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##ty", &prj_block->getPos()->y, -100, 100);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "100");
+            ImGui::TextColored(color_orange, "Z Axis");
+            ImGui::TextColored(color_orange, "   0");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##tz", &prj_block->getPos()->z, 0, 100);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "100");
+            ImGui::Separator();
 
-    ImGui::TextColored(color_blue, "Relative Rotation");
-    ImGui::TextColored(color_orange, "Relative X Axis");
-    ImGui::TextColored(color_orange, "-180");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##rx", &prj_block->getRelativeRotation()->x, -180, 180);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "180");
-    ImGui::TextColored(color_orange, "Relative Y Axis");
-    ImGui::TextColored(color_orange, "-180");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##ry", &prj_block->getRelativeRotation()->y, -180, 180);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "180");
-    ImGui::TextColored(color_orange, "Relative Z Axis");
-    ImGui::TextColored(color_orange, "-180");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##rz", &prj_block->getRelativeRotation()->z, -180, 180);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "180");
-    ImGui::Separator();
+            ImGui::TextColored(color_blue, "Relative Rotation");
+            ImGui::TextColored(color_orange, "Relative X Axis");
+            ImGui::TextColored(color_orange, "-180");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##rx", &prj_block->getRelativeRotation()->x, -180, 180);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "180");
+            ImGui::TextColored(color_orange, "Relative Y Axis");
+            ImGui::TextColored(color_orange, "-180");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##ry", &prj_block->getRelativeRotation()->y, -180, 180);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "180");
+            ImGui::TextColored(color_orange, "Relative Z Axis");
+            ImGui::TextColored(color_orange, "-180");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##rz", &prj_block->getRelativeRotation()->z, -180, 180);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "180");
+            ImGui::Separator();
 
 
-    ImGui::TextColored(color_blue, "Global Rotation");
-    ImGui::TextColored(color_orange, "Global X Axis");
-    ImGui::TextColored(color_orange, "-180");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##gx", &prj_block->getGlobalRotation()->x, -180, 180);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "180");
-    ImGui::TextColored(color_orange, "Global Y Axis");
-    ImGui::TextColored(color_orange, "-180");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##gy", &prj_block->getGlobalRotation()->y, -180, 180);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "180");
-    ImGui::TextColored(color_orange, "Global Z Axis");
-    ImGui::TextColored(color_orange, "-180");
-    ImGui::SameLine();
-    ImGui::SliderFloat("##gz", &prj_block->getGlobalRotation()->z, -180, 180);
-    ImGui::SameLine();
-    ImGui::TextColored(color_orange, "180");
-    ImGui::Separator();
-    if (center_on_camera)
-        ImGui::EndDisabled();
+            ImGui::TextColored(color_blue, "Global Rotation");
+            ImGui::TextColored(color_orange, "Global X Axis");
+            ImGui::TextColored(color_orange, "-180");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##gx", &prj_block->getGlobalRotation()->x, -180, 180);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "180");
+            ImGui::TextColored(color_orange, "Global Y Axis");
+            ImGui::TextColored(color_orange, "-180");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##gy", &prj_block->getGlobalRotation()->y, -180, 180);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "180");
+            ImGui::TextColored(color_orange, "Global Z Axis");
+            ImGui::TextColored(color_orange, "-180");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##gz", &prj_block->getGlobalRotation()->z, -180, 180);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "180");
+            ImGui::Separator();
+            if (center_on_camera)
+                ImGui::EndDisabled();
 
-    ImVec2 button_size = ImVec2{ 150, 0 };
-    float width = ImGui::GetWindowSize().x;
-    float centre_pos = (width - button_size.x) / 2;
-    ImGui::SetCursorPosX(centre_pos);
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.752f, 0.223f, 0.168f, 1 });
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.905f, 0.298f, 0.235f, 1 });
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.905f, 0.298f, 0.235f, 1 });
-    if (ImGui::Button("Place Block!", button_size)) {
-        placeBlock(false);
-    }
-    ImGui::PopStyleColor(3);
+            ImVec2 button_size = ImVec2{ 150, 0 };
+            float width = ImGui::GetWindowSize().x;
+            float centre_pos = (width - button_size.x) / 2;
+            ImGui::SetCursorPosX(centre_pos);
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.752f, 0.223f, 0.168f, 1 });
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.905f, 0.298f, 0.235f, 1 });
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.905f, 0.298f, 0.235f, 1 });
+            if (ImGui::Button("Place Block!", button_size)) {
+                placeBlock(false);
+            }
+            ImGui::PopStyleColor(3);
 
-    ImGui::End();
-    // ImGui::ShowDemoWindow(); //Displays the default ImGui demo from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
-    // WOImGui::draw_AftrImGui_Demo( gui ); //Displays a small Aftr Demo from C:/repos/aburn/engine/src/aftr/WOImGui.cpp
-    // ImPlot::ShowDemoWindow(); //Displays the ImPlot demo using ImGui from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
+            ImGui::End();
+            // ImGui::ShowDemoWindow(); //Displays the default ImGui demo from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
+            // WOImGui::draw_AftrImGui_Demo( gui ); //Displays a small Aftr Demo from C:/repos/aburn/engine/src/aftr/WOImGui.cpp
+            // ImPlot::ShowDemoWindow(); //Displays the ImPlot demo using ImGui from C:/repos/aburn/engine/src/imgui_implot/implot_demo.cpp
         });
     this->worldLst->push_back(gui);
 
@@ -630,11 +631,10 @@ void GLViewBlockyWorld::updateProjection()
 {
     if (camera_mode == "close") {
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
-        auto pos = player->getPosition();
-        pos = (lookDirection * 15) + this->getCamera()->getPosition();
-        pos.z -= 5;
-        if (pos.z < 4) pos.z = 4;
-        player->setPosition(pos);
+        auto pos = player->getPos();
+        *pos = (lookDirection * 15) + this->getCamera()->getPosition();
+        pos->z -= 5;
+        if (pos->z < 4) pos->z = 4;
 
         auto rotateByInZ = lookDirection.x * 90 - 90;
         if (lookDirection.y > 0) rotateByInZ *= -1;
@@ -645,8 +645,8 @@ void GLViewBlockyWorld::updateProjection()
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
         auto pos = prj_block->getPos();
         *pos = (lookDirection * 20) + this->getCamera()->getPosition();
+        pos->z -= 4;
         if (pos->z < 2) pos->z = 2;
-
     }
 }
 
@@ -710,11 +710,21 @@ void GLViewBlockyWorld::updateMusicSettings()
 }
 
 void GLViewBlockyWorld::placeBlock(bool proj) {
-
     if (proj) {
-        prj_block = Block::New(cube_proj_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+        prj_block = Block::New(cube_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
         prj_block->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
         prj_block->setLabel("Cube Projection");
+
+        auto tex = ManagerTex::loadTexAsync(ManagerEnvironmentConfiguration::getLMM() + "/models/cube_transparent.png");
+        prj_block->upon_async_model_loaded([this, tex]()
+            {
+                auto skin = ModelMeshSkin(*tex);
+                skin.setMeshShadingType(MESH_SHADING_TYPE::mstFLAT);
+                prj_block->getModel()->addSkin(std::move(skin));
+                prj_block->getModel()->useNextSkin();
+
+            });
+
         worldLst->push_back(prj_block);
 
     }

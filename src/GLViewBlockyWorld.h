@@ -47,7 +47,7 @@ namespace Aftr
         GLViewBlockyWorld(const std::vector<std::string>& args);
         virtual void onCreate();
 
-        std::string cube_loc, cube_proj_loc;
+        std::string cube_loc;
         std::string camera_mode = "close";
         bool center_on_camera = true;
         std::map<SDL_KeyCode, bool> active_keys;
