@@ -33,7 +33,12 @@ Aftr::Vector* Block::getGlobalRotation()
 
 Aftr::Vector* Block::getPos()
 {
-    return &positionInfo;
+    return positionInfo;
+}
+
+void Block::setPos(Aftr::Vector pos)
+{
+    *positionInfo = pos;
 }
 
 void Block::onUpdateWO()
@@ -41,7 +46,7 @@ void Block::onUpdateWO()
     WO::onUpdateWO();
 
     // translation
-    this->setPosition(positionInfo);
+    this->setPosition(*positionInfo);
 
     // relative rotations 
     this->rotateAboutRelX(degToRad(curr_relativeRotationInfo.x - prev_relativeRotationInfo.x));

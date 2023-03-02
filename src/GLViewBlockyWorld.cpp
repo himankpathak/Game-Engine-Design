@@ -96,6 +96,19 @@ void GLViewBlockyWorld::updateWorld()
     updateControls();
     updateProjection();
     updateMusicSettings();
+
+    auto timeNow = std::chrono::high_resolution_clock::now();
+    auto retryAfter = std::chrono::duration_cast<std::chrono::seconds>(timeNow - tcpRetry).count();
+    if (!client->isTCPSocketOpen() && retryAfter > 15)
+    {
+        this->client = NetMessengerClient::New("127.0.0.1", ManagerEnvironmentConfiguration::getVariableValue("Port"));
+        tcpRetry = timeNow;
+    }
+
+    if (client && netBlockMgr && client->isTCPSocketOpen())
+    {
+        client->sendNetMsgSynchronousTCP(*this->netBlockMgr);
+    }
 }
 
 
@@ -194,7 +207,6 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
         active_keys[SDLK_LCTRL] = true;
     }
 }
-
 
 void GLViewBlockyWorld::onKeyUp(const SDL_KeyboardEvent& key)
 {
@@ -354,8 +366,20 @@ void Aftr::GLViewBlockyWorld::loadMap()
         player->setLabel("Player");
         worldLst->push_back(player);
     }
+    {
+        // Create other player model
+        otherPlayer = Block::New(player_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstSMOOTH);
+        otherPlayer->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+        otherPlayer->setLabel("OtherPlayer");
+        worldLst->push_back(otherPlayer);
+    }
+
+    NetMsgBlock* blockMgr = new NetMsgBlock();
+    this->netBlockMgr = blockMgr;
 
     placeBlock(true);
+
+    client = NetMessengerClient::New("127.0.0.1", ManagerEnvironmentConfiguration::getVariableValue("Port"));
 
     {
         WO* wo = WO::New(sound_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstSMOOTH);
@@ -496,6 +520,17 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
             ImGui::Begin("Controls");
             ImGui::Separator();
+
+            ImGui::TextColored(color_orange, "Port:");
+            ImGui::SameLine();
+            ImGui::TextColored(color_blue, ManagerEnvironmentConfiguration::getVariableValue("Port").c_str());
+            ImGui::TextColored(color_orange, "TCP Connection:");
+            ImGui::SameLine();
+            bool tsock = false;
+            if (client)
+                tsock = client->isTCPSocketOpen();
+            ImGui::TextColored(color_blue, tsock ? "true" : "false");
+
             ImGui::TextColored(color_blue, "Center on camera");
             ImGui::SameLine();
             ImGui::Checkbox("##centercamera", &center_on_camera);
@@ -645,10 +680,11 @@ void GLViewBlockyWorld::updateProjection()
 {
     if (camera_mode == "close") {
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
-        auto pos = player->getPos();
-        *pos = (lookDirection * 15) + this->getCamera()->getPosition();
-        pos->z -= 5;
-        if (pos->z < 4) pos->z = 4;
+        auto pos = (lookDirection * 15) + this->getCamera()->getPosition();
+        pos.z -= 5;
+        if (pos.z < 4)
+            pos.z = 4;
+        player->setPos(pos);
 
         auto rotateByInZ = lookDirection.x * 90 - 90;
         if (lookDirection.y > 0) rotateByInZ *= -1;
@@ -657,10 +693,12 @@ void GLViewBlockyWorld::updateProjection()
 
     if (prj_block && center_on_camera) {
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
-        auto pos = prj_block->getPos();
-        *pos = (lookDirection * 20) + this->getCamera()->getPosition();
-        pos->z -= 4;
-        if (pos->z < 2) pos->z = 2;
+        auto pos = (lookDirection * 20) + this->getCamera()->getPosition();
+        pos.z -= 4;
+        if (pos.z < 2)
+            pos.z = 2;
+
+        prj_block->setPos(pos);
     }
 }
 
@@ -746,8 +784,8 @@ void GLViewBlockyWorld::placeBlock(bool proj) {
         WO* wo = WO::New(blocks_loc[active_block_index], active_block_index == 0 ? Vector(1, 1, 1) : Vector(4, 4, 4), MESH_SHADING_TYPE::mstFLAT);
 
         // Transfer pose data from projection to new block
-        auto pos = prj_block->getPosition();
-        auto dm = prj_block->getDisplayMatrix();
+        Aftr::Vector pos = prj_block->getPosition();
+        Aftr::Mat4 dm = prj_block->getDisplayMatrix();
         wo->setPosition(pos);
         wo->setDisplayMatrix(dm);
 

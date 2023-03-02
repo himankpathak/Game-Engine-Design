@@ -1,9 +1,12 @@
 #pragma once
 
 #include "GLView.h"
+#include "chrono"
 #include "Instructions.h"
 #include "Block.h"
 #include "irrKlang.h"
+#include <NetMessengerClient.h>
+#include <NetMsgBlock.h>
 
 namespace Aftr
 {
@@ -43,6 +46,9 @@ namespace Aftr
         virtual void updateMusicSettings();
         virtual void placeBlock(bool proj);
 
+        Block* player;
+        Block* otherPlayer;
+
     protected:
         GLViewBlockyWorld(const std::vector<std::string>& args);
         virtual void onCreate();
@@ -56,7 +62,10 @@ namespace Aftr
 
         std::vector<WO*> blocks;
         Block* prj_block;
-        Block* player;
+        NetMessengerClient* client = nullptr;
+        NetMsgBlock* netBlockMgr = nullptr;
+
+        std::chrono::high_resolution_clock::time_point tcpRetry;
 
         irrklang::ISoundEngine* soundEngine;
         irrklang::ISound* bg_music;
