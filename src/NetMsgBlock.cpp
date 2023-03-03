@@ -15,17 +15,27 @@ NetMsgBlock::~NetMsgBlock()
 
 bool NetMsgBlock::toStream(NetMessengerStreamBuffer& os) const
 {
-    auto glView = (GLViewBlockyWorld*)ManagerGLView::getGLView();
+    os << action;
 
-    Vector pos = glView->player->getPosition();
-    Mat4 disp = glView->player->getDisplayMatrix();
+    if (action == "syncPlayer") {
+        os << position.x;
+        os << position.y;
+        os << position.z;
 
-    os << pos.x;
-    os << pos.y;
-    os << pos.z;
+        for (int i = 0; i < 16; i++) {
+            os << displayMat[i];
+        }
+    }
+    else if (action == "placeBlock") {
+        os << block_type;
 
-    for (int i = 0; i < 16; i++) {
-        os << disp[i];
+        os << position.x;
+        os << position.y;
+        os << position.z;
+
+        for (int i = 0; i < 16; i++) {
+            os << displayMat[i];
+        }
     }
 
     return true;
@@ -33,13 +43,27 @@ bool NetMsgBlock::toStream(NetMessengerStreamBuffer& os) const
 
 bool NetMsgBlock::fromStream(NetMessengerStreamBuffer& is)
 {
+    is >> action;
 
-    is >> position.x;
-    is >> position.y;
-    is >> position.z;
+    if (action == "syncPlayer") {
+        is >> position.x;
+        is >> position.y;
+        is >> position.z;
 
-    for (int i = 0; i < 16; i++) {
-        is >> displayMat[i];
+        for (int i = 0; i < 16; i++) {
+            is >> displayMat[i];
+        }
+    }
+    else if (action == "placeBlock") {
+        is >> block_type;
+
+        is >> position.x;
+        is >> position.y;
+        is >> position.z;
+
+        for (int i = 0; i < 16; i++) {
+            is >> displayMat[i];
+        }
     }
 
     return true;
@@ -48,12 +72,20 @@ bool NetMsgBlock::fromStream(NetMessengerStreamBuffer& is)
 void NetMsgBlock::onMessageArrived()
 {
     auto glView = (GLViewBlockyWorld*)ManagerGLView::getGLView();
-    auto otherPos = glView->otherPlayer;
 
-    if (otherPos) {
-        otherPos->setPos(position);
-        otherPos->setDisplayMatrix(displayMat);
+    if (action == "syncPlayer") {
+        auto otherPos = glView->otherPlayer;
+
+        if (otherPos) {
+            otherPos->setPos(position);
+            otherPos->setDisplayMatrix(displayMat);
+        }
     }
+    else if (action == "placeBlock") {
+        glView->placeBlock(false, block_type, position, displayMat);
+    }
+
+
 }
 
 std::string NetMsgBlock::toString() const

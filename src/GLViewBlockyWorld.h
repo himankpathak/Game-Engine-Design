@@ -44,7 +44,8 @@ namespace Aftr
         virtual void updateControls();
         virtual void updateProjection();
         virtual void updateMusicSettings();
-        virtual void placeBlock(bool proj);
+        virtual void placeBlock(bool proj, std::optional<int> index = std::nullopt, std::optional<Vector> pos = std::nullopt, std::optional<Mat4> dm = std::nullopt);
+        virtual void sendNetMessage(std::string action);
 
         Block* player;
         Block* otherPlayer;

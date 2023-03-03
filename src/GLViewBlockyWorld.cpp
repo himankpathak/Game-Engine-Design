@@ -101,14 +101,11 @@ void GLViewBlockyWorld::updateWorld()
     auto retryAfter = std::chrono::duration_cast<std::chrono::seconds>(timeNow - tcpRetry).count();
     if (!client->isTCPSocketOpen() && retryAfter > 15)
     {
-        this->client = NetMessengerClient::New("127.0.0.1", ManagerEnvironmentConfiguration::getVariableValue("Port"));
         tcpRetry = timeNow;
+        this->client = NetMessengerClient::New("127.0.0.1", ManagerEnvironmentConfiguration::getVariableValue("Port"));
     }
 
-    if (client && netBlockMgr && client->isTCPSocketOpen())
-    {
-        client->sendNetMsgSynchronousTCP(*this->netBlockMgr);
-    }
+    sendNetMessage("syncPlayer");
 }
 
 
@@ -180,6 +177,7 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
     if (key.keysym.sym == SDLK_SPACE)
     {
         placeBlock(false);
+        sendNetMessage("placeBlock");
     }
 
     if (key.keysym.sym == SDLK_w)
@@ -613,6 +611,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.905f, 0.298f, 0.235f, 1 });
             if (ImGui::Button("Place Block!", button_size)) {
                 placeBlock(false);
+                sendNetMessage("placeBlock");
             }
             ImGui::PopStyleColor(3);
 
@@ -761,7 +760,7 @@ void GLViewBlockyWorld::updateMusicSettings()
     prev_pos = position;
 }
 
-void GLViewBlockyWorld::placeBlock(bool proj) {
+void GLViewBlockyWorld::placeBlock(bool proj, std::optional<int> index, std::optional<Vector> pos, std::optional<Mat4> dm) {
     if (proj) {
         prj_block = Block::New(blocks_loc[0], Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
         prj_block->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
@@ -781,20 +780,53 @@ void GLViewBlockyWorld::placeBlock(bool proj) {
 
     }
     else {
-        WO* wo = WO::New(blocks_loc[active_block_index], active_block_index == 0 ? Vector(1, 1, 1) : Vector(4, 4, 4), MESH_SHADING_TYPE::mstFLAT);
+        int indexToUse;
+        Vector posToUse;
+        Mat4 dmToUse;
+        if (index)
+            indexToUse = index.value();
+        else
+            indexToUse = active_block_index;
 
-        // Transfer pose data from projection to new block
-        Aftr::Vector pos = prj_block->getPosition();
-        Aftr::Mat4 dm = prj_block->getDisplayMatrix();
-        wo->setPosition(pos);
-        wo->setDisplayMatrix(dm);
+        if (pos)
+            posToUse = pos.value();
+        else
+            posToUse = prj_block->getPosition();
+
+        if (dm)
+            dmToUse = dm.value();
+        else
+            dmToUse = prj_block->getDisplayMatrix();
+
+        WO* wo = WO::New(blocks_loc[indexToUse], indexToUse == 0 ? Vector(1, 1, 1) : Vector(4, 4, 4), MESH_SHADING_TYPE::mstFLAT);
+
+        wo->setPosition(posToUse);
+        wo->setDisplayMatrix(dmToUse);
 
         wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
         wo->setLabel("Cube");
         blocks.push_back(wo);
         worldLst->push_back(wo);
 
-        soundEngine->play3D(rand() % 2 ? "BlockSound1" : "BlockSound2", irrklang::vec3df(pos.x, pos.y, pos.z));
+        soundEngine->play3D(rand() % 2 ? "BlockSound1" : "BlockSound2", irrklang::vec3df(posToUse.x, posToUse.y, posToUse.z));
+    }
+}
+
+void GLViewBlockyWorld::sendNetMessage(std::string action) {
+    if (client && netBlockMgr && client->isTCPSocketOpen()) {
+        netBlockMgr->action = action;
+
+        if (action == "syncPlayer") {
+            netBlockMgr->position = player->getPosition();
+            netBlockMgr->displayMat = player->getDisplayMatrix();
+        }
+        else if (action == "placeBlock") {
+            netBlockMgr->block_type = active_block_index;
+            netBlockMgr->position = prj_block->getPosition();
+            netBlockMgr->displayMat = prj_block->getDisplayMatrix();
+        }
+
+        client->sendNetMsgSynchronousUDP(*netBlockMgr);
     }
 }
 

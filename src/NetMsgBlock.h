@@ -12,12 +12,13 @@ namespace Aftr {
 
         NetMsgBlock();
         virtual ~NetMsgBlock();
-        virtual bool toStream(NetMessengerStreamBuffer& ostream) const;
-        virtual bool fromStream(NetMessengerStreamBuffer& istream);
+        virtual bool toStream(NetMessengerStreamBuffer& os) const;
+        virtual bool fromStream(NetMessengerStreamBuffer& is);
         virtual void onMessageArrived();
         virtual std::string toString() const;
 
-    protected:
+        std::string action;
+        int block_type;
         Vector position;
         Mat4 displayMat;
     };
