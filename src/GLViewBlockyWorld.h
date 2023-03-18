@@ -47,6 +47,7 @@ namespace Aftr
         virtual void updateMusicSettings();
         virtual void placeBlock(bool proj, std::optional<int> index = std::nullopt, std::optional<Mat4> pose = std::nullopt);
         virtual void sendNetMessage(std::string action);
+        virtual void updateGravity(physx::PxVec3 g);
 
         Block* player;
         Block* otherPlayer;
@@ -78,6 +79,7 @@ namespace Aftr
         physx::PxPhysics* pxPhysics = nullptr;
         physx::PxScene* pxScene = nullptr;
         physx::PxVec3 gravity = physx::PxVec3(0.0f, 0.0f, -9.8f);
+        physx::PxVec3 prev_gravity;
     };
 
     /** \} */

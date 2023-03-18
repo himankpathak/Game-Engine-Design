@@ -18,24 +18,21 @@ bool NetMsgBlock::toStream(NetMessengerStreamBuffer& os) const
     os << action;
 
     if (action == "syncPlayer") {
-        os << position.x;
-        os << position.y;
-        os << position.z;
-
         for (int i = 0; i < 16; i++) {
-            os << displayMat[i];
+            os << pose[i];
         }
     }
     else if (action == "placeBlock") {
         os << block_type;
 
-        os << position.x;
-        os << position.y;
-        os << position.z;
-
         for (int i = 0; i < 16; i++) {
-            os << displayMat[i];
+            os << pose[i];
         }
+    }
+    else if (action == "syncGravity") {
+        os << gravity.x;
+        os << gravity.y;
+        os << gravity.z;
     }
 
     return true;
@@ -46,24 +43,21 @@ bool NetMsgBlock::fromStream(NetMessengerStreamBuffer& is)
     is >> action;
 
     if (action == "syncPlayer") {
-        is >> position.x;
-        is >> position.y;
-        is >> position.z;
-
         for (int i = 0; i < 16; i++) {
-            is >> displayMat[i];
+            is >> pose[i];
         }
     }
     else if (action == "placeBlock") {
         is >> block_type;
 
-        is >> position.x;
-        is >> position.y;
-        is >> position.z;
-
         for (int i = 0; i < 16; i++) {
-            is >> displayMat[i];
+            is >> pose[i];
         }
+    }
+    else if (action == "syncGravity") {
+        is >> gravity.x;
+        is >> gravity.y;
+        is >> gravity.z;
     }
 
     return true;
@@ -77,12 +71,14 @@ void NetMsgBlock::onMessageArrived()
         auto otherPos = glView->otherPlayer;
 
         if (otherPos) {
-            otherPos->setPos(position);
-            otherPos->setDisplayMatrix(displayMat);
+            otherPos->setBlockPose(pose);
         }
     }
     else if (action == "placeBlock") {
-        glView->placeBlock(false, block_type, position, displayMat);
+        glView->placeBlock(false, block_type, pose);
+    }
+    else if (action == "syncGravity") {
+        glView->updateGravity(gravity);
     }
 
 

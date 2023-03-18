@@ -19,7 +19,7 @@ namespace Aftr {
 
         std::string action;
         int block_type;
-        Vector position;
-        Mat4 displayMat;
+        Mat4 pose;
+        physx::PxVec3 gravity;
     };
 }

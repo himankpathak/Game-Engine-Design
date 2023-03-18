@@ -103,7 +103,12 @@ void GLViewBlockyWorld::updateWorld()
     //If you want to add additional functionality, do it after
     //this call.
 
-    pxScene->setGravity(gravity);
+    if (prev_gravity != gravity) {
+        pxScene->setGravity(gravity);
+        sendNetMessage("syncGravity");
+        prev_gravity = gravity;
+    }
+
     pxScene->simulate(0.02);
 
     physx::PxU32 errorState = 0;
@@ -868,17 +873,23 @@ void GLViewBlockyWorld::sendNetMessage(std::string action) {
         netBlockMgr->action = action;
 
         if (action == "syncPlayer") {
-            netBlockMgr->position = player->getPosition();
-            netBlockMgr->displayMat = player->getDisplayMatrix();
+            netBlockMgr->pose = player->getPose();
         }
         else if (action == "placeBlock") {
             netBlockMgr->block_type = active_block_index;
-            netBlockMgr->position = prj_block->getPosition();
-            netBlockMgr->displayMat = prj_block->getDisplayMatrix();
+            netBlockMgr->pose = prj_block->getPose();
+        }
+        else if (action == "syncGravity") {
+            netBlockMgr->gravity = gravity;
         }
 
         client->sendNetMsgSynchronousUDP(*netBlockMgr);
     }
+}
+
+void Aftr::GLViewBlockyWorld::updateGravity(physx::PxVec3 g)
+{
+    gravity = g;
 }
 
 void GLViewBlockyWorld::createBlockyWorldWayPoints()
