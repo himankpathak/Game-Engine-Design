@@ -36,16 +36,16 @@
 
 using namespace Aftr;
 
-GLViewBlockyWorld* GLViewBlockyWorld::New(const std::vector< std::string >& args)
+GLViewBlockyWorld* GLViewBlockyWorld::New(const std::vector< std::string >& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene)
 {
-    GLViewBlockyWorld* glv = new GLViewBlockyWorld(args);
+    GLViewBlockyWorld* glv = new GLViewBlockyWorld(args, pxPhysics, pxScene);
     glv->init(Aftr::GRAVITY, Vector(0, 0, -1.0f), "aftr.conf", PHYSICS_ENGINE_TYPE::petODE);
     glv->onCreate();
     return glv;
 }
 
 
-GLViewBlockyWorld::GLViewBlockyWorld(const std::vector< std::string >& args) : GLView(args)
+GLViewBlockyWorld::GLViewBlockyWorld(const std::vector< std::string >& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene) : GLView(args)
 {
     //Initialize any member variables that need to be used inside of LoadMap() here.
     //Note: At this point, the Managers are not yet initialized. The Engine initialization
@@ -60,6 +60,9 @@ GLViewBlockyWorld::GLViewBlockyWorld(const std::vector< std::string >& args) : G
     //    calls GLView::onCreate()
 
     //GLViewBlockyWorld::onCreate() is invoked after this module's LoadMap() is completed.
+
+    this->pxPhysics = pxPhysics;
+    this->pxScene = pxScene;
 }
 
 
@@ -77,6 +80,13 @@ void GLViewBlockyWorld::onCreate()
     }
     this->setActorChaseType(STANDARDEZNAV); //Default is STANDARDEZNAV mode
     //this->setNumPhysicsStepsPerRender( 0 ); //pause physics engine on start up; will remain paused till set to 1
+
+    if (pxPhysics && pxScene) {
+        // grass physx
+        physx::PxMaterial* gMaterial = pxPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+        physx::PxRigidStatic* groundPlane = PxCreatePlane(*pxPhysics, physx::PxPlane(0, 0, 1, 0), *gMaterial);
+        pxScene->addActor(*groundPlane);
+    }
 }
 
 
@@ -92,6 +102,32 @@ void GLViewBlockyWorld::updateWorld()
     GLView::updateWorld(); //Just call the parent's update world first.
     //If you want to add additional functionality, do it after
     //this call.
+
+    pxScene->setGravity(gravity);
+    pxScene->simulate(0.02);
+
+    physx::PxU32 errorState = 0;
+    pxScene->fetchResults(true);
+    {
+        /*physx::PxU32 numActors = 0;
+        physx::PxActor** actors = pxScene->getActiveActors(numActors);
+
+        for (physx::PxU32 i = 0; i < numActors; ++i) {
+            physx::PxActor* actor = actors[i];
+            Block* wo = static_cast<Block*>(actor->userData);
+            wo->updatePoseFromPhysicsEngine();
+        }*/
+
+        physx::PxU32 numStaticActors = pxScene->getNbActors(physx::PxActorTypeFlag::eRIGID_DYNAMIC);
+        physx::PxActor** staticActors = new physx::PxActor * [numStaticActors];
+        auto tmp = pxScene->getActors(physx::PxActorTypeFlag::eRIGID_DYNAMIC, staticActors, numStaticActors);
+
+        for (physx::PxU32 i = 0; i < numStaticActors; i++) {
+            physx::PxActor* actor = staticActors[i];
+            Block* wo = static_cast<Block*>(actor->userData);
+            wo->updatePoseFromPhysicsEngine();
+        }
+    }
 
     updateControls();
     updateProjection();
@@ -530,6 +566,27 @@ void Aftr::GLViewBlockyWorld::loadMap()
                 tsock = client->isTCPSocketOpen();
             ImGui::TextColored(color_blue, tsock ? "true" : "false");
 
+            ImGui::TextColored(color_blue, "Gravity");
+            ImGui::TextColored(color_orange, "X Axis");
+            ImGui::TextColored(color_orange, "-10");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##gravityx", &gravity.x, -100, 100);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "10");
+            ImGui::TextColored(color_orange, "Y Axis");
+            ImGui::TextColored(color_orange, "-10");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##gravityy", &gravity.y, -100, 100);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "10");
+            ImGui::TextColored(color_orange, "Z Axis");
+            ImGui::TextColored(color_orange, "-10");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##gravityz", &gravity.z, -100, 100);
+            ImGui::SameLine();
+            ImGui::TextColored(color_orange, "10");
+            ImGui::Separator();
+
             ImGui::TextColored(color_blue, "Center on camera");
             ImGui::SameLine();
             ImGui::Checkbox("##centercamera", &center_on_camera);
@@ -761,7 +818,7 @@ void GLViewBlockyWorld::updateMusicSettings()
     prev_pos = position;
 }
 
-void GLViewBlockyWorld::placeBlock(bool proj, std::optional<int> index, std::optional<Vector> pos, std::optional<Mat4> dm) {
+void GLViewBlockyWorld::placeBlock(bool proj, std::optional<int> index, std::optional<Mat4> pose) {
     if (proj) {
         prj_block = Block::New(blocks_loc[0], Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
         prj_block->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
@@ -782,34 +839,27 @@ void GLViewBlockyWorld::placeBlock(bool proj, std::optional<int> index, std::opt
     }
     else {
         int indexToUse;
-        Vector posToUse;
-        Mat4 dmToUse;
+        Mat4 poseToUse;
         if (index)
             indexToUse = index.value();
         else
             indexToUse = active_block_index;
 
-        if (pos)
-            posToUse = pos.value();
+        if (pose)
+            poseToUse = pose.value();
         else
-            posToUse = prj_block->getPosition();
+            poseToUse = prj_block->getPose();
 
-        if (dm)
-            dmToUse = dm.value();
-        else
-            dmToUse = prj_block->getDisplayMatrix();
+        Block* wo = Block::New(blocks_loc[indexToUse], indexToUse == 0 ? Vector(1, 1, 1) : Vector(4, 4, 4), MESH_SHADING_TYPE::mstFLAT, pxPhysics, pxScene, poseToUse);
 
-        WO* wo = WO::New(blocks_loc[indexToUse], indexToUse == 0 ? Vector(1, 1, 1) : Vector(4, 4, 4), MESH_SHADING_TYPE::mstFLAT);
-
-        wo->setPosition(posToUse);
-        wo->setDisplayMatrix(dmToUse);
+        wo->setBlockPose(poseToUse);
 
         wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
         wo->setLabel("Cube");
         blocks.push_back(wo);
         worldLst->push_back(wo);
 
-        soundEngine->play3D(rand() % 2 ? "BlockSound1" : "BlockSound2", irrklang::vec3df(posToUse.x, posToUse.y, posToUse.z));
+        soundEngine->play3D(rand() % 2 ? "BlockSound1" : "BlockSound2", irrklang::vec3df(poseToUse[12], poseToUse[13], poseToUse[14]));
     }
 }
 

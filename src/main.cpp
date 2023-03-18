@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include "GLViewBlockyWorld.h" //GLView subclass instantiated to drive this simulation
+#include "PxPhysicsAPI.h"
 
 /**
    This creates a GLView subclass instance and begins the GLView's main loop.
@@ -20,9 +21,27 @@ int main( int argc, char* argv[] )
    std::vector< std::string > args{ argv, argv + argc }; ///< Command line arguments passed via argc and argv, reserved to size of argc
    int simStatus = 0;
 
+   physx::PxDefaultAllocator pxAllocator;
+   physx::PxDefaultErrorCallback pxError;
+   physx::PxFoundation* pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, pxAllocator, pxError);
+
+   physx::PxPvd* gPvd = physx::PxCreatePvd(*pxFoundation);
+   physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10000);
+   gPvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
+
+   physx::PxPhysics* pxPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, physx::PxTolerancesScale(), true, gPvd);
+
+   physx::PxSceneDesc pxSceneDesc(pxPhysics->getTolerancesScale());
+   pxSceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+   pxSceneDesc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+   //pxSceneDesc.flags = pxSceneDesc.flags | physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+   pxSceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -9.8f);
+   
+   physx::PxScene* pxScene = pxPhysics->createScene(pxSceneDesc);
+
    do
    {
-      std::unique_ptr< Aftr::GLViewBlockyWorld > glView( Aftr::GLViewBlockyWorld::New( args ) );
+      std::unique_ptr< Aftr::GLViewBlockyWorld > glView( Aftr::GLViewBlockyWorld::New( args, pxPhysics, pxScene ) );
       simStatus = glView->startWorldSimulationLoop(); // Runs until simulation exits or requests a restart (values 0 or -1, respectively)
    }
    while( simStatus != 0 );
