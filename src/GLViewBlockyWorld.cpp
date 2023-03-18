@@ -152,7 +152,7 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
         this->setNumPhysicsStepsPerRender(1);
 
     if (key.keysym.sym >= 48 && key.keysym.sym <= 57) {
-        active_block_index = key.keysym.sym - 48;
+        active_block_index = key.keysym.sym - 48 + 1;
     }
 
     if (key.keysym.sym == SDLK_p)
@@ -275,8 +275,9 @@ void Aftr::GLViewBlockyWorld::loadMap()
     blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Erde.3ds");
     blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Diamanterz.3ds");
     blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Glowstone.3ds");
+    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Grundstein.3ds");
     blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Lapislazulierz.3ds");
-    blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Stein.3ds");
+    // blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Lava.3ds");
     blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Obsidian.3ds");
     blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Redstone-Erz.3ds");
     blocks_loc.push_back(ManagerEnvironmentConfiguration::getLMM() + "/models/blocks/Stein.3ds");
