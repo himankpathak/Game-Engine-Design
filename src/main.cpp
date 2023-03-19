@@ -34,7 +34,7 @@ int main( int argc, char* argv[] )
    physx::PxSceneDesc pxSceneDesc(pxPhysics->getTolerancesScale());
    pxSceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
    pxSceneDesc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
-   //pxSceneDesc.flags = pxSceneDesc.flags | physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+   pxSceneDesc.flags = pxSceneDesc.flags | physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
    pxSceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -9.8f);
    
    physx::PxScene* pxScene = pxPhysics->createScene(pxSceneDesc);

@@ -573,23 +573,23 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
             ImGui::TextColored(color_blue, "Gravity");
             ImGui::TextColored(color_orange, "X Axis");
-            ImGui::TextColored(color_orange, "-10");
+            ImGui::TextColored(color_orange, "-50");
             ImGui::SameLine();
-            ImGui::SliderFloat("##gravityx", &gravity.x, -100, 100);
+            ImGui::SliderFloat("##gravityx", &gravity.x, -50, 50);
             ImGui::SameLine();
-            ImGui::TextColored(color_orange, "10");
+            ImGui::TextColored(color_orange, "50");
             ImGui::TextColored(color_orange, "Y Axis");
-            ImGui::TextColored(color_orange, "-10");
+            ImGui::TextColored(color_orange, "-50");
             ImGui::SameLine();
-            ImGui::SliderFloat("##gravityy", &gravity.y, -100, 100);
+            ImGui::SliderFloat("##gravityy", &gravity.y, -50, 50);
             ImGui::SameLine();
-            ImGui::TextColored(color_orange, "10");
+            ImGui::TextColored(color_orange, "50");
             ImGui::TextColored(color_orange, "Z Axis");
-            ImGui::TextColored(color_orange, "-10");
+            ImGui::TextColored(color_orange, "-50");
             ImGui::SameLine();
-            ImGui::SliderFloat("##gravityz", &gravity.z, -100, 100);
+            ImGui::SliderFloat("##gravityz", &gravity.z, -50, 50);
             ImGui::SameLine();
-            ImGui::TextColored(color_orange, "10");
+            ImGui::TextColored(color_orange, "50");
             ImGui::Separator();
 
             ImGui::TextColored(color_blue, "Center on camera");
