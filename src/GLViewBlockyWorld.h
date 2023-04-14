@@ -28,7 +28,7 @@ namespace Aftr
     class GLViewBlockyWorld : public GLView
     {
     public:
-        static GLViewBlockyWorld* New(const std::vector<std::string>& outArgs, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene);
+        static GLViewBlockyWorld* New(const std::vector<std::string>& outArgs, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene, physx::PxCooking* pxCooking);
         virtual ~GLViewBlockyWorld();
         virtual void updateWorld(); ///< Called once per frame
         virtual void loadMap();     ///< Called once at startup to build this module's scene
@@ -53,7 +53,7 @@ namespace Aftr
         Block* otherPlayer;
 
     protected:
-        GLViewBlockyWorld(const std::vector<std::string>& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene);
+        GLViewBlockyWorld(const std::vector<std::string>& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene, physx::PxCooking* pxCooking);
         virtual void onCreate();
 
         std::vector<std::string> blocks_loc;
@@ -78,6 +78,7 @@ namespace Aftr
 
         physx::PxPhysics* pxPhysics = nullptr;
         physx::PxScene* pxScene = nullptr;
+        physx::PxCooking* pxCooking = nullptr;
         physx::PxVec3 gravity = physx::PxVec3(0.0f, 0.0f, -9.8f);
         physx::PxVec3 prev_gravity;
     };

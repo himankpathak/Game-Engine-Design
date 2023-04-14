@@ -36,16 +36,16 @@
 
 using namespace Aftr;
 
-GLViewBlockyWorld* GLViewBlockyWorld::New(const std::vector< std::string >& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene)
+GLViewBlockyWorld* GLViewBlockyWorld::New(const std::vector< std::string >& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene, physx::PxCooking* pxCooking)
 {
-    GLViewBlockyWorld* glv = new GLViewBlockyWorld(args, pxPhysics, pxScene);
+    GLViewBlockyWorld* glv = new GLViewBlockyWorld(args, pxPhysics, pxScene, pxCooking);
     glv->init(Aftr::GRAVITY, Vector(0, 0, -1.0f), "aftr.conf", PHYSICS_ENGINE_TYPE::petODE);
     glv->onCreate();
     return glv;
 }
 
 
-GLViewBlockyWorld::GLViewBlockyWorld(const std::vector< std::string >& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene) : GLView(args)
+GLViewBlockyWorld::GLViewBlockyWorld(const std::vector< std::string >& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene, physx::PxCooking* pxCooking) : GLView(args)
 {
     //Initialize any member variables that need to be used inside of LoadMap() here.
     //Note: At this point, the Managers are not yet initialized. The Engine initialization
@@ -63,6 +63,7 @@ GLViewBlockyWorld::GLViewBlockyWorld(const std::vector< std::string >& args, phy
 
     this->pxPhysics = pxPhysics;
     this->pxScene = pxScene;
+    this->pxCooking = pxCooking;
 }
 
 

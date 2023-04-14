@@ -38,10 +38,21 @@ int main( int argc, char* argv[] )
    pxSceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -9.8f);
    
    physx::PxScene* pxScene = pxPhysics->createScene(pxSceneDesc);
+   //set up physX cooking 
+   if (!PxInitExtensions(*pxPhysics, gPvd)) {
+	   std::cout << "PxInitExtensions failed!" << std::endl;
+	   std::cin.get();
+   }
+   //setup cooking since extensions are confirmed 
+   physx::PxCooking* pxCooking = PxCreateCooking(PX_PHYSICS_VERSION, *pxFoundation, physx::PxCookingParams(physx::PxTolerancesScale()));
+   if (!pxCooking) {
+	   std::cout << "Cooking error" << std::endl;
+	   std::cin.get();
+   }
 
    do
    {
-      std::unique_ptr< Aftr::GLViewBlockyWorld > glView( Aftr::GLViewBlockyWorld::New( args, pxPhysics, pxScene ) );
+      std::unique_ptr< Aftr::GLViewBlockyWorld > glView( Aftr::GLViewBlockyWorld::New( args, pxPhysics, pxScene, pxCooking ) );
       simStatus = glView->startWorldSimulationLoop(); // Runs until simulation exits or requests a restart (values 0 or -1, respectively)
    }
    while( simStatus != 0 );
