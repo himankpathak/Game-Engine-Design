@@ -82,12 +82,14 @@ void GLViewBlockyWorld::onCreate()
     this->setActorChaseType(STANDARDEZNAV); //Default is STANDARDEZNAV mode
     //this->setNumPhysicsStepsPerRender( 0 ); //pause physics engine on start up; will remain paused till set to 1
 
+    /*
     if (pxPhysics && pxScene) {
         // grass physx
         physx::PxMaterial* gMaterial = pxPhysics->createMaterial(0.5f, 0.5f, 0.6f);
         physx::PxRigidStatic* groundPlane = PxCreatePlane(*pxPhysics, physx::PxPlane(0, 0, 1, 0), *gMaterial);
         pxScene->addActor(*groundPlane);
     }
+    */
 }
 
 
@@ -289,13 +291,13 @@ void Aftr::GLViewBlockyWorld::loadMap()
     this->actorLst = new WorldList();
     this->netLst = new WorldList();
 
-    ManagerOpenGLState::GL_CLIPPING_PLANE = 1000.0;
+    ManagerOpenGLState::GL_CLIPPING_PLANE = 2000.0;
     ManagerOpenGLState::GL_NEAR_PLANE = 0.1f;
     ManagerOpenGLState::enableFrustumCulling = false;
     Axes::isVisible = true;
-    this->glRenderer->isUsingShadowMapping(true); //set to TRUE to enable shadow mapping, must be using GL 3.2+
+    this->glRenderer->isUsingShadowMapping(false); // set to TRUE to enable shadow mapping, must be using GL 3.2+
 
-    this->cam->setPosition(0, 0, 15);
+    this->cam->setPosition(200, 0, 15);
 
     soundEngine = irrklang::createIrrKlangDevice();
     bg_music = soundEngine->play2D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Wehrmut_Godmode.mp3").c_str(), true, false, true, irrklang::E_STREAM_MODE(0), true);
@@ -382,7 +384,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
         worldLst->push_back(wo);
     }
 
-    {
+    /*{
         ////Create the infinite grass plane (the floor)
         WO* wo = WO::New(grass, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
         wo->setPosition(Vector(0, 0, 0));
@@ -398,7 +400,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
             });
         wo->setLabel("Grass");
         worldLst->push_back(wo);
-    }
+    }*/
 
     {
         // Create player model
@@ -407,9 +409,11 @@ void Aftr::GLViewBlockyWorld::loadMap()
         player->setLabel("Player");
         worldLst->push_back(player);
     }
+
     {
         // Create other player model
         otherPlayer = Block::New(player_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstSMOOTH);
+        otherPlayer->setPos(Vector(120.0f, -200.0f, -200.0f));
         otherPlayer->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
         otherPlayer->setLabel("OtherPlayer");
         worldLst->push_back(otherPlayer);
@@ -422,7 +426,7 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
     client = NetMessengerClient::New("127.0.0.1", ManagerEnvironmentConfiguration::getVariableValue("Port"));
 
-    {
+    /*{
         WO* wo = WO::New(sound_loc, Vector(1, 1, 1), MESH_SHADING_TYPE::mstSMOOTH);
         wo->setPosition(Vector(180, 180, 15));
         wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
@@ -434,6 +438,47 @@ void Aftr::GLViewBlockyWorld::loadMap()
         spooky_music->setMinDistance(20);
         auto sec = spooky_music->getSoundEffectControl();
         sec->enableEchoSoundEffect();
+    }*/
+
+    {
+        std::string elevationPath(ManagerEnvironmentConfiguration::getLMM() + "models/minecraft_heightmap.tiff");
+        std::string texturePath(ManagerEnvironmentConfiguration::getLMM() + "images/minecraft_texture.png");
+        // std::string elevationPath(ManagerEnvironmentConfiguration::getLMM() + "models/woodland.tif");
+        // std::string texturePath(ManagerEnvironmentConfiguration::getLMM() + "images/woodland.bmp");
+
+        float top = 0.11;    // 34.2072593790098f;
+        float bottom = 0.12; // 33.9980272592999f;
+        float left = -0.11;  //-118.65234375f;
+        float right = -0.12; //-118.443603515625f;
+
+        float vert = top - bottom;
+        float horz = right - left;
+
+        VectorD offset((top + bottom) / 2, (left + right) / 2, 0);
+
+        auto centerOfWorld = offset.toVecS().toECEFfromWGS84();
+        auto gravityDir = -centerOfWorld;
+        gravityDir.normalize();
+
+        VectorD scale = VectorD(1.0f, 1.0f, 1.0f);
+        VectorD upperLeft(top, left, 0);
+        VectorD lowerRight(bottom, right, 0);
+
+        grid = CustomGrid::New(pxPhysics, pxScene, pxCooking, upperLeft, lowerRight, offset, scale, elevationPath, texturePath);
+        grid->setLabel("grid");
+        grid->useFrustumCulling = false;
+
+        grid->upon_async_model_loaded([this, gravityDir, centerOfWorld]
+            {
+
+                updateGravity(physx::PxVec3{ gravityDir.x * 8, gravityDir.y * 8, gravityDir.z * 8 });
+                this->getCamera()->setCameraAxisOfHorizontalRotationViaMouseMotion(centerOfWorld.toVecS());
+
+                player->setDisplayMatrix(this->getCamera()->getDisplayMatrix());
+                otherPlayer->setDisplayMatrix(this->getCamera()->getDisplayMatrix());
+            });
+
+        worldLst->push_back((WO*)grid);
     }
 
     //{
@@ -507,7 +552,6 @@ void Aftr::GLViewBlockyWorld::loadMap()
     //}
 
     //{
-
     //   //Create and insert the WOWheeledVehicle
     //   std::vector< std::string > wheels;
     //   std::string wheelStr( "../../../shared/mm/models/WOCar1970sBeaterTire.wrl" );
@@ -541,10 +585,10 @@ void Aftr::GLViewBlockyWorld::loadMap()
 
             ImGui::Begin("Sound Settings");
             ImGui::Separator();
-            ImGui::TextColored(color_orange, "Spooky Music");
-            ImGui::SameLine();
-            ImGui::Checkbox("##spooky_music", &music_flags["spooky_music_playing"]);
-            ImGui::Separator();
+            //ImGui::TextColored(color_orange, "Spooky Music");
+            //ImGui::SameLine();
+            //ImGui::Checkbox("##spooky_music", &music_flags["spooky_music_playing"]);
+            //ImGui::Separator();
             ImGui::TextColored(color_orange, "Background Music");
             ImGui::SameLine();
             ImGui::Checkbox("##bg_music_playing", &music_flags["bg_music_playing"]);
@@ -694,7 +738,7 @@ void GLViewBlockyWorld::updateControls()
     if (active_keys[SDLK_w])
     {
         auto lookDirection = this->getCamera()->getLookDirection();
-        lookDirection.z = 0;
+        lookDirection.x = 0;
         this->getCamera()->moveRelative(lookDirection * this->getCamera()->getCameraVelocity());
 
     }
@@ -702,7 +746,7 @@ void GLViewBlockyWorld::updateControls()
     if (active_keys[SDLK_s])
     {
         auto lookDirection = this->getCamera()->getLookDirection();
-        lookDirection.z = 0;
+        lookDirection.x = 0;
         this->getCamera()->moveRelative(lookDirection * -1 * this->getCamera()->getCameraVelocity());
     }
 
@@ -727,7 +771,7 @@ void GLViewBlockyWorld::updateControls()
         auto lookDirection = this->getCamera()->getLookDirection();
         auto normalDirection = this->getCamera()->getLookDirection();
 
-        this->getCamera()->moveRelative(Vector(0, 0, 1) * this->getCamera()->getCameraVelocity());
+        this->getCamera()->moveRelative(Vector(1, 0, 0) * this->getCamera()->getCameraVelocity());
     }
 
     if (active_keys[SDLK_LCTRL])
@@ -735,7 +779,7 @@ void GLViewBlockyWorld::updateControls()
         auto lookDirection = this->getCamera()->getLookDirection();
         auto normalDirection = this->getCamera()->getLookDirection();
 
-        this->getCamera()->moveRelative(Vector(0, 0, -1) * this->getCamera()->getCameraVelocity());
+        this->getCamera()->moveRelative(Vector(-1, 0, 0) * this->getCamera()->getCameraVelocity());
     }
 }
 
@@ -744,22 +788,23 @@ void GLViewBlockyWorld::updateProjection()
     if (camera_mode == "close") {
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
         auto pos = (lookDirection * 15) + this->getCamera()->getPosition();
-        pos.z -= 5;
-        if (pos.z < 4)
-            pos.z = 4;
+        pos.x -= 5;
+        // if (pos.z < 4)
+        // pos.z = 4;
         player->setPos(pos);
 
-        auto rotateByInZ = lookDirection.x * 90 - 90;
-        if (lookDirection.y > 0) rotateByInZ *= -1;
-        player->getRelativeRotation()->z = rotateByInZ;
+        auto rotateByInZ = (lookDirection.y * 90) - 60;
+        if (lookDirection.z > 0)
+            rotateByInZ *= -1;
+        player->getGlobalRotation()->x = rotateByInZ;
     }
 
     if (prj_block && center_on_camera) {
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
-        auto pos = (lookDirection * 20) + this->getCamera()->getPosition();
-        pos.z -= 4;
-        if (pos.z < 2)
-            pos.z = 2;
+        auto pos = (lookDirection * 25) + this->getCamera()->getPosition();
+        pos.x -= 4;
+        // if (pos.z < 2)
+        //     pos.z = 2;
 
         prj_block->setPos(pos);
     }
@@ -807,9 +852,9 @@ void GLViewBlockyWorld::updateMusicSettings()
     if (music_flags["spooky_music_playing"] && spooky_music->getIsPaused()) {
         spooky_music->setIsPaused(false);
     }
-    else if (!music_flags["spooky_music_playing"] && !spooky_music->getIsPaused()) {
+    /*else if (!music_flags["spooky_music_playing"] && !spooky_music->getIsPaused()) {
         spooky_music->setIsPaused(true);
-    }
+    }*/
 
     auto position = this->getCamera()->getPosition();
     auto lookDir = this->getCamera()->getLookDirection();

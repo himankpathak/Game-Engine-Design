@@ -8,6 +8,7 @@
 #include "NetMessengerClient.h"
 #include "NetMsgBlock.h"
 #include "PxPhysicsAPI.h"
+#include "CustomGrid.h"
 
 namespace Aftr
 {
@@ -67,6 +68,8 @@ namespace Aftr
         Block* prj_block;
         NetMessengerClient* client = nullptr;
         NetMsgBlock* netBlockMgr = nullptr;
+
+        CustomGrid* grid = nullptr;
 
         std::chrono::high_resolution_clock::time_point tcpRetry;
 
