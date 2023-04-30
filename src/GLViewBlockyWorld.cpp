@@ -134,9 +134,13 @@ void GLViewBlockyWorld::updateWorld()
         }
     }
 
+
+    this->cameraFrustumMgr->updateFrustum(this->getCamera(), frustumOutline, camera_mode);
+
     updateControls();
     updateProjection();
     updateMusicSettings();
+
 
     auto timeNow = std::chrono::high_resolution_clock::now();
     auto retryAfter = std::chrono::duration_cast<std::chrono::seconds>(timeNow - tcpRetry).count();
@@ -209,9 +213,11 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
     {
         if (camera_mode == "close") {
             camera_mode = "free";
+            frustumOutline->isVisible = true;
         }
         else {
             camera_mode = "close";
+            frustumOutline->isVisible = false;
         }
     }
 
@@ -219,6 +225,26 @@ void GLViewBlockyWorld::onKeyDown(const SDL_KeyboardEvent& key)
     {
         placeBlock(false);
         sendNetMessage("placeBlock");
+    }
+
+    if (key.keysym.sym == SDLK_LEFTBRACKET) {
+        frustumOutline->rotateAboutRelZ(20 * Aftr::DEGtoRAD);
+    }
+    if (key.keysym.sym == SDLK_RIGHTBRACKET) {
+        frustumOutline->rotateAboutRelZ(-20 * Aftr::DEGtoRAD);
+    }
+
+    if (key.keysym.sym == SDLK_m) {
+        std::cout << ">>>>>>>>>>>      Blocks currently visibile:" << std::endl;
+        for (size_t i = 0; i < blocks.size(); i++) {
+            Block* wo = blocks[i];
+        
+            if (wo->isVisible) {
+                auto pos = wo->getPosition();
+                std::cout << ">>>>>>>>>>>            Block Id:" << wo->getID() << std::endl;
+                std::cout << ">>>>>>>>>>>            Coordinates: " << pos.x << "," << pos.y << "," << pos.z << std::endl;
+            }
+        }
     }
 
     if (key.keysym.sym == SDLK_w)
@@ -292,9 +318,127 @@ void Aftr::GLViewBlockyWorld::loadMap()
     ManagerOpenGLState::GL_NEAR_PLANE = 0.1f;
     ManagerOpenGLState::enableFrustumCulling = false;
     Axes::isVisible = true;
-    this->glRenderer->isUsingShadowMapping(true); //set to TRUE to enable shadow mapping, must be using GL 3.2+
+    this->glRenderer->isUsingShadowMapping(false); //set to TRUE to enable shadow mapping, must be using GL 3.2+
 
     this->cam->setPosition(0, 0, 15);
+
+    this->cameraFrustumMgr = new CameraFrustum(&this->blocks);
+
+    {
+        size_t numVerts = 39;
+        std::vector< Vector > lines(numVerts);
+        std::vector<unsigned int> vertIndicies(numVerts);
+        std::vector< aftrColor4ub > colors(numVerts);
+
+        auto widthToHeight = this->cam->getCameraAspectRatioWidthToHeight();
+        auto verticalFOVDeg = this->cam->getCameraVerticalFOVDeg();
+        auto near1 = this->cam->getCameraNearClippingPlaneDistance();
+        auto far1 = this->cam->getCameraFarClippingPlaneDistance();
+        auto lookDir = this->cam->getLookDirection();
+
+        float nearPlane = 1.0f;
+        float farPlane = 50.0f;
+        float horzFOVDeg = 90.0f;
+        float aspectRatioWidthToHeight = 4.0f / 3.0f;
+
+        auto normalDirection = this->cam->getNormalDirection();
+        auto position = this->cam->getPosition();
+        float vFovDeg = 2.0f * std::atan(std::tan(horzFOVDeg * Aftr::DEGtoRAD / 2.0f) * (1.0f / aspectRatioWidthToHeight)) * Aftr::RADtoDEG;
+
+        //Top view perspective of frustum
+        float tanHalfAngleWidth = std::tan(horzFOVDeg * Aftr::DEGtoRAD / 2.0f);
+        float halfWidthAtNear = nearPlane * tanHalfAngleWidth;
+        float halfWidthAtFar = farPlane * tanHalfAngleWidth;
+
+        //Side view perspective of frustum
+        float tanHalfAngleHeight = std::tan(vFovDeg * Aftr::DEGtoRAD / 2.0f);
+        float halfHeightAtNear = nearPlane * tanHalfAngleHeight;
+        float halfHeightAtFar = farPlane * tanHalfAngleHeight;
+
+        Vector nul = { nearPlane, halfWidthAtNear, halfHeightAtNear };
+        Vector nll = { nearPlane, halfWidthAtNear, -halfHeightAtNear };
+        Vector nlr = { nearPlane, -halfWidthAtNear, -halfHeightAtNear };
+        Vector nur = { nearPlane, -halfWidthAtNear, halfHeightAtNear };
+
+        Vector ful = { farPlane, halfWidthAtFar, halfHeightAtFar };
+        Vector fll = { farPlane, halfWidthAtFar, -halfHeightAtFar };
+        Vector flr = { farPlane, -halfWidthAtFar, -halfHeightAtFar };
+        Vector fur = { farPlane, -halfWidthAtFar, halfHeightAtFar };
+
+        //start at near left side and wind around counter clockwise
+        aftrColor4ub r = aftrColor4ub(255, 0, 0, 40);
+        aftrColor4ub g = aftrColor4ub(0, 255, 0, 40);
+        aftrColor4ub b = aftrColor4ub(0, 0, 255, 40);
+        size_t i = 0;
+        unsigned int indexCounter = 0;
+
+        //do near plane first
+        lines[i] = nul; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nlr; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nur; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nul; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nlr; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nll; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+
+        //left side plane 
+        lines[i] = nul; colors[i] = g; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = ful; colors[i] = g; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fll; colors[i] = g; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fll; colors[i] = g; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nll; colors[i] = g; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nul; colors[i] = g; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+
+        // top side plane
+        lines[i] = nul; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = ful; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fur; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fur; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nur; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nul; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+
+        // right side plane 
+        lines[i] = nur; colors[i] = r; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fur; colors[i] = r; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = flr; colors[i] = r; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = flr; colors[i] = r; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nlr; colors[i] = r; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nur; colors[i] = r; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+
+        // bottom side plane
+        lines[i] = nlr; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = flr; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fll; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fll; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nll; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = nlr; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+
+        // far plane 
+        lines[i] = ful; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fur; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = flr; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = flr; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = fll; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+        lines[i] = ful; colors[i] = b; vertIndicies[i] = indexCounter; ++i; indexCounter++;
+
+
+        WO* wo = WO::New();
+        wo->setLabel("Frustum");
+        MGLIndexedGeometry* mgl = MGLIndexedGeometry::New(wo);
+        wo->setModel(mgl);
+        auto outline = IndexedGeometryTriangles::New(lines, vertIndicies, colors);
+        mgl->setIndexedGeometry(outline);
+        GLSLShaderPerVertexColorGL32* shdr = GLSLShaderPerVertexColorGL32::New();
+        mgl->getSkin().setShader(shdr);
+        mgl->getSkin().setAmbient(aftrColor4f{ 1.0f,1.0f,1.0f, 1.0f });
+        mgl->getSkin().setDiffuse(aftrColor4f{ 1.0f,1.0f,1.0f, 1.0f });
+        mgl->getSkin().setSpecular(aftrColor4f{ 1.0f,1.0f,1.0f, 1.0f });
+        wo->setPosition(this->cam->getPosition());
+
+        frustumOutline = wo;
+        frustumOutline->isVisible = false;
+  
+        this->worldLst->push_back(frustumOutline);
+    }
 
     soundEngine = irrklang::createIrrKlangDevice();
     bg_music = soundEngine->play2D((ManagerEnvironmentConfiguration::getLMM() + "/sounds/Wehrmut_Godmode.mp3").c_str(), true, false, true, irrklang::E_STREAM_MODE(0), true);
@@ -743,6 +887,8 @@ void GLViewBlockyWorld::updateProjection()
     if (camera_mode == "close") {
         auto lookDirection = this->getCamera()->getLookDirection().normalizeMe();
         auto pos = (lookDirection * 15) + this->getCamera()->getPosition();
+        frustumOutline->setPosition(pos);
+
         pos.z -= 5;
         if (pos.z < 4)
             pos.z = 4;

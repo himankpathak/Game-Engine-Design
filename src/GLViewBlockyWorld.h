@@ -8,6 +8,11 @@
 #include "NetMessengerClient.h"
 #include "NetMsgBlock.h"
 #include "PxPhysicsAPI.h"
+#include "CameraFrustum.h"
+#include "MGLIndexedGeometry.h"
+#include "IndexedGeometryLines.h"
+#include "IndexedGeometryTriangles.h"
+#include "GLSLShaderPerVertexColorGL32.h"
 
 namespace Aftr
 {
@@ -52,6 +57,9 @@ namespace Aftr
         Block* player;
         Block* otherPlayer;
 
+        CameraFrustum* cameraFrustumMgr = nullptr;
+        WO* frustumOutline = nullptr;
+
     protected:
         GLViewBlockyWorld(const std::vector<std::string>& args, physx::PxPhysics* pxPhysics, physx::PxScene* pxScene);
         virtual void onCreate();
@@ -60,6 +68,7 @@ namespace Aftr
         int active_block_index = 1;
         std::string camera_mode = "close";
         bool center_on_camera = true;
+
         std::map<SDL_KeyCode, bool> active_keys;
         Aftr::Vector prev_pos;
 
